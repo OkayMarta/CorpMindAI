@@ -1,0 +1,30 @@
+# Dependencies (бібліотеки)
+node_modules/
+
+# Environment variables (СЕКРЕТНІ ДАНІ)
+.env
+.env.local
+.env.*.local
+
+# Build output (зібраний фронтенд)
+dist/
+build/
+
+# Logs (логи помилок)
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor directories (налаштування редакторів)
+.idea/
+.vscode/
+*.suo
+*.ntvs
+*.njsproj
+*.sln
+*.sw?
+
+# OS generated files (сміття операційної системи)
+.DS_Store
+Thumbs.db

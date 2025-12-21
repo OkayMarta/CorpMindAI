@@ -13,6 +13,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import DashboardLayout from './pages/DashboardLayout';
 import WorkspaceView from './pages/WorkspaceView';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 const PrivateRoute = ({ children }) => {
 	const { isAuthenticated, loading } = useAuth();
@@ -32,7 +34,6 @@ function App() {
 			<Router>
 				<ToastContainer theme="dark" position="top-right" />
 				<Routes>
-					{/* Публічний Лендінг */}
 					<Route
 						path="/"
 						element={
@@ -59,7 +60,6 @@ function App() {
 						}
 					/>
 
-					{/* Захищений Дашборд */}
 					<Route
 						path="/dashboard"
 						element={
@@ -75,6 +75,24 @@ function App() {
 							<PrivateRoute>
 								<WorkspaceView />
 							</PrivateRoute>
+						}
+					/>
+
+					<Route
+						path="/forgot-password"
+						element={
+							<PublicRoute>
+								<ForgotPassword />
+							</PublicRoute>
+						}
+					/>
+
+					<Route
+						path="/reset-password/:token"
+						element={
+							<PublicRoute>
+								<ResetPassword />
+							</PublicRoute>
 						}
 					/>
 				</Routes>

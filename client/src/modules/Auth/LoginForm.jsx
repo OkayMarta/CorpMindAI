@@ -4,6 +4,7 @@ import { authService } from '../../services/auth';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-toastify';
 import { Eye, EyeOff } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const LoginForm = () => {
 	const { loginUser } = useAuth();
@@ -110,12 +111,12 @@ const LoginForm = () => {
 							Remember Me
 						</span>
 					</label>
-					<a
-						href="#"
+					<Link
+						to="/forgot-password"
 						className="text-uiDisabled underline hover:text-purple transition-colors"
 					>
 						Forgot Password?
-					</a>
+					</Link>
 				</div>
 
 				{/* Gradient Button */}

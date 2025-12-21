@@ -29,7 +29,7 @@ const LoginForm = () => {
 		<div className="bg-light p-10 md:p-12 rounded shadow-2xl w-full max-w-[550px] text-center">
 			{/* Title */}
 			<h2 className="text-3xl font-bold text-dark mb-2">
-				Log In to CorpMind <span className="text-gold">AI</span>
+				Log In to CorpMind<span className="text-gold">AI</span>
 			</h2>
 			<p className="text-uiDisabled text-sm mb-8">
 				Enter your credentials to access your workspace

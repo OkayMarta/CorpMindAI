@@ -21,7 +21,7 @@ const Landing = () => {
 			<main className="flex-grow flex flex-col justify-center items-center text-center z-10 px-6">
 				{/* Main Title */}
 				<h1 className="text-5xl md:text-7xl font-medium mb-6 tracking-tight text-light">
-					CorpMind <span className="text-gold">AI</span>
+					CorpMind<span className="text-gold">AI</span>
 				</h1>
 
 				{/* Subtitle */}
@@ -41,7 +41,7 @@ const Landing = () => {
 
 			{/* FOOTER */}
 			<footer className="w-full text-center text-light text-xs py-6 z-10 bg-dark">
-				&copy; 2025 All Rights Reserved. CorpMind AI
+				&copy; 2025 All Rights Reserved. CorpMindAI
 			</footer>
 		</div>
 	);

@@ -42,7 +42,7 @@ const Login = () => {
 
 			{/* FOOTER */}
 			<footer className="w-full text-center text-light text-xs py-4 md:py-6 bg-dark z-20">
-				&copy; 2025 All Rights Reserved. CorpMind AI
+				&copy; 2025 All Rights Reserved. CorpMindAI
 			</footer>
 		</div>
 	);

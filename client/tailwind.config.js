@@ -5,6 +5,9 @@ export default {
 	content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
 	theme: {
 		extend: {
+			fontFamily: {
+				sans: ['Inter', 'sans-serif'],
+			},
 			colors: {
 				// Основні кольори
 				dark: '#141619',
@@ -16,7 +19,7 @@ export default {
 				uiDisabled: '#616161',
 			},
 			backgroundImage: {
-				// Градієнт для кнопки (як на фото)
+				// Градієнт для кнопки
 				'gradient-btn':
 					'linear-gradient(to right, #665DCD, #5FA4E6, #D2AB67)',
 				'gradient-btn-hover':

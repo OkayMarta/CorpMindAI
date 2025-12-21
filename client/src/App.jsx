@@ -11,6 +11,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import DashboardLayout from './pages/DashboardLayout';
+import WorkspaceView from './pages/WorkspaceView';
 
 const PrivateRoute = ({ children }) => {
 	const { isAuthenticated, loading } = useAuth();
@@ -53,6 +54,26 @@ function App() {
 						element={
 							<PrivateRoute>
 								<DashboardLayout />
+							</PrivateRoute>
+						}
+					/>
+
+					{/* Dashboard */}
+					<Route
+						path="/"
+						element={
+							<PrivateRoute>
+								<DashboardLayout />
+							</PrivateRoute>
+						}
+					/>
+
+					{/* Чат (динамічний ID) */}
+					<Route
+						path="/workspace/:id"
+						element={
+							<PrivateRoute>
+								<WorkspaceView />
 							</PrivateRoute>
 						}
 					/>

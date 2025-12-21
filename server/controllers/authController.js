@@ -35,7 +35,8 @@ const register = async (req, res) => {
 // Логін
 const login = async (req, res) => {
 	try {
-		const { email, password } = req.body;
+		// Отримуємо rememberMe з тіла запиту
+		const { email, password, rememberMe } = req.body;
 
 		const user = await pool.query('SELECT * FROM users WHERE email = $1', [
 			email,
@@ -52,7 +53,12 @@ const login = async (req, res) => {
 			return res.status(401).json('Password or Email is incorrect');
 		}
 
-		const token = jwtGenerator(user.rows[0].id);
+		// Логіка часу життя
+		const expiresIn = rememberMe ? '7d' : '1h'; // 7 днів або 1 година
+
+		// Передаємо час у генератор
+		const token = jwtGenerator(user.rows[0].id, expiresIn);
+
 		res.json({ token });
 	} catch (err) {
 		console.error(err.message);

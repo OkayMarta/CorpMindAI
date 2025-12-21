@@ -1,16 +1,16 @@
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
-function jwtGenerator(user_id) {
+function jwtGenerator(user_id, expiresIn = '1h') {
 	const payload = {
 		user: {
 			id: user_id,
 		},
 	};
 
-	// токен живе 1 год
+	// Використовуємо переданий час
 	return jwt.sign(payload, process.env.JWT_SECRET || 'secretkey123', {
-		expiresIn: '1h',
+		expiresIn,
 	});
 }
 

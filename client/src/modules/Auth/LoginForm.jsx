@@ -4,18 +4,23 @@ import { authService } from '../../services/auth';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-toastify';
 import { Eye, EyeOff } from 'lucide-react';
-import { FcGoogle } from 'react-icons/fc';
-import { FaFacebook, FaGithub } from 'react-icons/fa';
 
 const LoginForm = () => {
 	const { loginUser } = useAuth();
 	const navigate = useNavigate();
-	const [formData, setFormData] = useState({ email: '', password: '' });
+
+	const [formData, setFormData] = useState({
+		email: '',
+		password: '',
+		rememberMe: false, // Значення за замовчуванням
+	});
+
 	const [showPassword, setShowPassword] = useState(false);
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		try {
+			// formData тепер містить email, password і rememberMe
 			const data = await authService.login(formData);
 			loginUser(data.token);
 			toast.success('Welcome back!');
@@ -26,18 +31,18 @@ const LoginForm = () => {
 	};
 
 	return (
-		<div className="bg-light p-10 md:p-12 rounded shadow-2xl w-full max-w-[550px] text-center">
+		<div className="bg-light p-10 md:p-14 rounded shadow-2xl w-full max-w-[550px] text-center">
 			{/* Title */}
 			<h2 className="text-3xl font-bold text-dark mb-2">
 				Log In to CorpMind<span className="text-gold">AI</span>
 			</h2>
-			<p className="text-uiDisabled text-sm mb-8">
+			<p className="text-uiDisabled text-sm mb-10">
 				Enter your credentials to access your workspace
 			</p>
 
-			<form onSubmit={handleSubmit} className="space-y-6 text-left">
+			<form onSubmit={handleSubmit} className="space-y-8 text-left">
 				{/* Email Input */}
-				<div className="relative border border-uiDisabled/30 rounded px-3 py-2 focus-within:border-blue transition-colors">
+				<div className="relative border border-uiDisabled/30 rounded px-4 py-3 focus-within:border-blue transition-colors">
 					<label className="block text-[10px] font-bold text-uiDisabled uppercase tracking-wider mb-1">
 						Email Address
 					</label>
@@ -54,7 +59,7 @@ const LoginForm = () => {
 				</div>
 
 				{/* Password Input */}
-				<div className="relative border border-uiDisabled/30 rounded px-3 py-2 focus-within:border-blue transition-colors">
+				<div className="relative border border-uiDisabled/30 rounded px-4 py-3 focus-within:border-blue transition-colors">
 					<label className="block text-[10px] font-bold text-uiDisabled uppercase tracking-wider mb-1">
 						Password
 					</label>
@@ -87,11 +92,19 @@ const LoginForm = () => {
 				</div>
 
 				{/* Remember & Forgot */}
-				<div className="flex items-center justify-between text-sm">
+				<div className="flex items-center justify-between text-sm pt-2">
 					<label className="flex items-center cursor-pointer">
 						<input
 							type="checkbox"
 							className="w-4 h-4 text-purple border-uiDisabled/30 rounded focus:ring-purple"
+							// 2. Прив'язуємо чекбокс до стейту
+							checked={formData.rememberMe}
+							onChange={(e) =>
+								setFormData({
+									...formData,
+									rememberMe: e.target.checked,
+								})
+							}
 						/>
 						<span className="ml-2 text-uiDisabled underline hover:text-purple transition-colors">
 							Remember Me
@@ -106,45 +119,12 @@ const LoginForm = () => {
 				</div>
 
 				{/* Gradient Button */}
-				<button className="w-full py-3 rounded text-light font-bold text-lg uppercase tracking-wider bg-gradient-btn hover:bg-gradient-btn-hover transition-all duration-300 shadow-lg transform hover:scale-[1.02]">
+				<button className="w-full py-4 rounded text-light font-bold text-lg uppercase tracking-wider bg-gradient-btn hover:bg-gradient-btn-hover transition-all duration-300 shadow-lg transform hover:scale-[1.02]">
 					Log In
 				</button>
 			</form>
-
-			{/* Social Login Section */}
-			<div className="mt-5">
-				<div className="relative flex py-3 items-center">
-					{/* Лінія розділювача */}
-					<div className="flex-grow border-t border-uiDisabled/20"></div>
-					<span className="flex-shrink-0 mx-4 text-uiDisabled text-sm uppercase tracking-widest">
-						OR USE
-					</span>
-					<div className="flex-grow border-t border-uiDisabled/20"></div>
-				</div>
-
-				<div className="flex justify-center gap-4 mt-2">
-					<SocialButton>
-						<FcGoogle size={24} />
-					</SocialButton>
-
-					<SocialButton>
-						<FaGithub size={24} className="text-dark" />
-					</SocialButton>
-
-					<SocialButton>
-						<FaFacebook size={24} className="text-[#1877F2]" />
-					</SocialButton>
-				</div>
-			</div>
 		</div>
 	);
 };
-
-// Компонент кнопки соцмереж
-const SocialButton = ({ children }) => (
-	<button className="w-12 h-12 flex items-center justify-center border border-uiDisabled/30 rounded hover:bg-uiDisabled/10 transition shadow-sm transform hover:scale-105">
-		{children}
-	</button>
-);
 
 export default LoginForm;

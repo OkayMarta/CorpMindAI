@@ -5,18 +5,20 @@ const Landing = () => {
 	const navigate = useNavigate();
 
 	return (
-		<div className="min-h-screen bg-dark text-white relative flex flex-col overflow-hidden font-sans">
-			{/* Header / Logo */}
-			<div className="absolute top-6 left-6 md:top-10 md:left-10 z-20">
-				<img
-					src={logo}
-					alt="CorpMind AI"
-					className="w-24 md:w-32 h-auto"
-				/>
-			</div>
+		<div className="h-screen bg-dark text-white relative flex flex-col overflow-hidden font-sans">
+			{/* HEADER: Логотип */}
+			<header className="w-full max-w-[1600px] mx-auto px-6 md:px-10 pt-6 md:pt-10 flex justify-between items-center z-20">
+				<div className="cursor-pointer">
+					<img
+						src={logo}
+						alt="CorpMind AI"
+						className="w-24 md:w-32 h-auto"
+					/>
+				</div>
+			</header>
 
-			{/* Main Content (По центру екрану) */}
-			<div className="container mx-auto px-6 flex-grow flex flex-col justify-center items-center text-center z-10">
+			{/* MAIN CONTENT: Центрування по вертикалі та горизонталі */}
+			<main className="flex-grow flex flex-col justify-center items-center text-center z-10 px-6">
 				{/* Main Title */}
 				<h1 className="text-5xl md:text-7xl font-medium mb-6 tracking-tight text-light">
 					CorpMind <span className="text-gold">AI</span>
@@ -35,10 +37,10 @@ const Landing = () => {
 				>
 					Get Started
 				</button>
-			</div>
+			</main>
 
-			{/* Footer */}
-			<footer className="w-full text-center text-light text-xs py-6 z-10">
+			{/* FOOTER */}
+			<footer className="w-full text-center text-light text-xs py-6 z-10 bg-dark">
 				&copy; 2025 All Rights Reserved. CorpMind AI
 			</footer>
 		</div>

@@ -1,9 +1,49 @@
+import { useNavigate } from 'react-router-dom';
 import LoginForm from '../modules/Auth/LoginForm';
+import logo from '/logoCropped.svg';
 
 const Login = () => {
+	const navigate = useNavigate();
+
 	return (
-		<div className="min-h-screen bg-gray-900 flex items-center justify-center">
-			<LoginForm />
+		<div className="h-screen bg-dark font-sans overflow-hidden flex flex-col">
+			<div className="flex-grow w-full pt-6 md:pt-10">
+				<div className="w-full max-w-[1600px] mx-auto px-6 md:px-10 flex flex-col md:flex-row justify-between items-start gap-8">
+					{/* 1. ЛІВА ЧАСТИНА: Логотип */}
+					<div className="w-full md:w-auto md:flex-1 flex justify-center md:justify-start">
+						<div
+							onClick={() => navigate('/')}
+							className="cursor-pointer hover:opacity-80 transition"
+						>
+							<img
+								src={logo}
+								alt="CorpMind AI"
+								className="w-24 md:w-32 h-auto"
+							/>
+						</div>
+					</div>
+
+					{/* 2. ЦЕНТРАЛЬНА ЧАСТИНА: Картка */}
+					<main className="w-full md:w-auto flex justify-center z-10">
+						<LoginForm />
+					</main>
+
+					{/* 3. ПРАВА ЧАСТИНА: Кнопка Sign Up */}
+					<div className="w-full md:w-auto md:flex-1 flex justify-center md:justify-end order-first md:order-last mb-4 md:mb-0">
+						<button
+							onClick={() => navigate('/register')}
+							className="btn-outlined"
+						>
+							Sign Up
+						</button>
+					</div>
+				</div>
+			</div>
+
+			{/* FOOTER */}
+			<footer className="w-full text-center text-light text-xs py-4 md:py-6 bg-dark z-20">
+				&copy; 2025 All Rights Reserved. CorpMind AI
+			</footer>
 		</div>
 	);
 };

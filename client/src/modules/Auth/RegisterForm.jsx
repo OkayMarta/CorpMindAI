@@ -19,7 +19,7 @@ const RegisterForm = () => {
 			const data = await authService.register(formData);
 			loginUser(data.token);
 			toast.success('Registration successful!');
-			navigate('/'); // Перекидаємо на головну
+			navigate('/dashboard');
 		} catch (err) {
 			toast.error(err.response?.data || 'Error registering');
 		}

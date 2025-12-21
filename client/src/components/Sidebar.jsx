@@ -9,7 +9,7 @@ const Sidebar = () => {
 			{/* Logo */}
 			<div className="p-6 border-b border-gray-800">
 				<Link
-					to="/"
+					to="/dashboard"
 					className="text-2xl font-bold text-blue-500 flex items-center gap-2"
 				>
 					<div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm">

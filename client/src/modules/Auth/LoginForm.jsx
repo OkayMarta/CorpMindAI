@@ -15,7 +15,7 @@ const LoginForm = () => {
 			const data = await authService.login(formData);
 			loginUser(data.token);
 			toast.success('Welcome back!');
-			navigate('/');
+			navigate('/dashboard');
 		} catch (err) {
 			toast.error(err.response?.data || 'Invalid credentials');
 		}

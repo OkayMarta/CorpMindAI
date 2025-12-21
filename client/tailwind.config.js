@@ -1,8 +1,28 @@
+import { purge } from '../server/routes/workspace.routes';
+
 /** @type {import('tailwindcss').Config} */
 export default {
 	content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
 	theme: {
-		extend: {},
+		extend: {
+			colors: {
+				// Основні кольори
+				dark: '#141619',
+				light: '#FAFAFA',
+				gold: '#D2AB67',
+				blue: '#5FA4E6',
+				purple: '#665DCD',
+				uiError: '#F14668',
+				uiDisabled: '#616161',
+			},
+			backgroundImage: {
+				// Градієнт для кнопки (як на фото)
+				'gradient-btn':
+					'linear-gradient(to right, #665DCD, #5FA4E6, #D2AB67)',
+				'gradient-btn-hover':
+					'linear-gradient(to right, #D2AB67, #5FA4E6, #665DCD)',
+			},
+		},
 	},
 	plugins: [],
 };

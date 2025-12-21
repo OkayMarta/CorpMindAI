@@ -1,27 +1,64 @@
-import { useEffect, useState } from 'react';
+import {
+	BrowserRouter as Router,
+	Routes,
+	Route,
+	Navigate,
+} from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+import Login from './pages/Login';
+import Register from './pages/Register';
+import DashboardLayout from './pages/DashboardLayout';
+
+const PrivateRoute = ({ children }) => {
+	const { isAuthenticated, loading } = useAuth();
+	if (loading)
+		return <div className="text-white text-center mt-20">Loading...</div>;
+	return isAuthenticated ? children : <Navigate to="/login" />;
+};
+
+const PublicRoute = ({ children }) => {
+	const { isAuthenticated, loading } = useAuth();
+	if (loading) return null;
+	return isAuthenticated ? <Navigate to="/" /> : children;
+};
 
 function App() {
-	const [status, setStatus] = useState('Loading...');
-
-	useEffect(() => {
-		// Пробуємо достукатись до сервера
-		fetch('http://localhost:5000/api/health')
-			.then((res) => res.json())
-			.then((data) =>
-				setStatus(data.message + ' | DB Time: ' + data.db_time)
-			)
-			.catch((err) => setStatus('Error connecting to server'));
-	}, []);
-
 	return (
-		<div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-			<div className="text-center">
-				<h1 className="text-4xl font-bold mb-4 text-blue-500">
-					CorpMind Setup
-				</h1>
-				<p className="text-xl">Status: {status}</p>
-			</div>
-		</div>
+		<AuthProvider>
+			<Router>
+				<ToastContainer theme="dark" position="top-right" />
+				<Routes>
+					<Route
+						path="/login"
+						element={
+							<PublicRoute>
+								<Login />
+							</PublicRoute>
+						}
+					/>
+					<Route
+						path="/register"
+						element={
+							<PublicRoute>
+								<Register />
+							</PublicRoute>
+						}
+					/>
+
+					<Route
+						path="/"
+						element={
+							<PrivateRoute>
+								<DashboardLayout />
+							</PrivateRoute>
+						}
+					/>
+				</Routes>
+			</Router>
+		</AuthProvider>
 	);
 }
 

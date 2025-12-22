@@ -11,6 +11,7 @@
 	"author": "",
 	"license": "ISC",
 	"dependencies": {
+		"@chroma-core/default-embed": "^0.1.9",
 		"@cyber2024/pdf-parse-fixed": "^1.2.5",
 		"@google/generative-ai": "^0.24.1",
 		"@xenova/transformers": "^2.17.2",

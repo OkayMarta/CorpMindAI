@@ -11,6 +11,7 @@ export default {
 			colors: {
 				// Основні кольори
 				dark: '#141619',
+				dark2: '#1A1D21',
 				light: '#FAFAFA',
 				gold: '#D2AB67',
 				blue: '#5FA4E6',

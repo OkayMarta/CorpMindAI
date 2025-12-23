@@ -1,140 +1,158 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Upload, Trash2, FileText, File, Loader2 } from 'lucide-react';
 import { documentService } from '../../services/documents';
 import { toast } from 'react-toastify';
-import { FileText, Trash2, UploadCloud, Loader2 } from 'lucide-react';
 
-const DocumentsManager = ({ workspaceId }) => {
+// 1. Додаємо userRole у пропси
+const DocumentsManager = ({ workspaceId, userRole }) => {
 	const [documents, setDocuments] = useState([]);
-	const [loading, setLoading] = useState(true);
-	const [uploading, setUploading] = useState(false);
+	const [isLoading, setIsLoading] = useState(false);
+	const [isUploading, setIsUploading] = useState(false);
 
-	// Завантаження списку
-	const fetchDocs = async () => {
+	// 2. Визначаємо, чи є юзер адміном/власником
+	const isAdmin = userRole === 'owner' || userRole === 'admin';
+
+	// Завантаження списку (доступно всім)
+	useEffect(() => {
+		fetchDocuments();
+	}, [workspaceId]);
+
+	const fetchDocuments = async () => {
+		setIsLoading(true);
 		try {
 			const data = await documentService.getAll(workspaceId);
 			setDocuments(data);
-		} catch (err) {
-			console.error(err);
+		} catch (error) {
+			console.error(error);
 		} finally {
-			setLoading(false);
+			setIsLoading(false);
 		}
 	};
 
-	useEffect(() => {
-		fetchDocs();
-	}, [workspaceId]);
-
-	// Обробка вибору файлу
 	const handleFileUpload = async (e) => {
 		const file = e.target.files[0];
 		if (!file) return;
 
-		setUploading(true);
+		setIsUploading(true);
 		try {
-			await documentService.upload(workspaceId, file);
+			const newDoc = await documentService.upload(workspaceId, file);
+			setDocuments((prev) => [newDoc, ...prev]);
 			toast.success('Document uploaded & indexed!');
-			fetchDocs(); // Оновити список
-		} catch (err) {
-			toast.error('Upload failed. Check console.');
-			console.error(err);
+		} catch (error) {
+			toast.error('Upload failed');
+			console.error(error);
 		} finally {
-			setUploading(false);
-			e.target.value = null; // Скинути інпут
+			setIsUploading(false);
 		}
 	};
 
-	// Видалення
-	const handleDelete = async (id) => {
+	const handleDelete = async (docId) => {
 		if (
-			!confirm(
+			!window.confirm(
 				'Are you sure? This will remove it from the AI knowledge base.'
 			)
 		)
 			return;
 		try {
-			await documentService.delete(id);
+			await documentService.delete(docId);
+			setDocuments((prev) => prev.filter((d) => d.id !== docId));
 			toast.success('Document deleted');
-			setDocuments(documents.filter((d) => d.id !== id));
-		} catch (err) {
-			toast.error('Failed to delete');
+		} catch (error) {
+			toast.error('Delete failed');
 		}
 	};
 
 	return (
 		<div className="space-y-6">
-			{/* Upload Area */}
-			<div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors bg-gray-50">
-				{uploading ? (
-					<div className="flex flex-col items-center text-blue-600">
-						<Loader2 className="animate-spin mb-2" size={32} />
-						<p>Processing & Indexing AI Vectors...</p>
-						<p className="text-xs text-gray-500 mt-1">
-							This might take a minute for large files.
-						</p>
-					</div>
-				) : (
-					<label className="cursor-pointer flex flex-col items-center">
-						<UploadCloud size={40} className="text-gray-400 mb-2" />
-						<span className="text-gray-700 font-medium">
-							Click to upload PDF or DOCX
-						</span>
-						<span className="text-xs text-gray-400 mt-1">
-							Max size 10MB
-						</span>
-						<input
-							type="file"
-							className="hidden"
-							accept=".pdf,.docx,.txt"
-							onChange={handleFileUpload}
-						/>
-					</label>
-				)}
-			</div>
+			{/* 3. Приховуємо зону завантаження, якщо не адмін */}
+			{isAdmin && (
+				<div className="border-2 border-dashed border-gray-700 rounded-xl p-8 text-center hover:border-purple transition-colors bg-[#1A1D21]">
+					{isUploading ? (
+						<div className="flex flex-col items-center text-purple">
+							<Loader2 className="animate-spin mb-2" size={32} />
+							<p>Processing & Indexing AI Vectors...</p>
+						</div>
+					) : (
+						<>
+							<input
+								type="file"
+								id="file-upload"
+								className="hidden"
+								onChange={handleFileUpload}
+								accept=".pdf,.docx,.txt"
+							/>
+							<label
+								htmlFor="file-upload"
+								className="cursor-pointer flex flex-col items-center justify-center gap-2"
+							>
+								<div className="bg-gray-800 p-4 rounded-full text-gray-300">
+									<Upload size={24} />
+								</div>
+								<p className="text-white font-medium">
+									Click to upload documents
+								</p>
+								<p className="text-xs text-gray-500">
+									PDF, DOCX, TXT (Max 10MB)
+								</p>
+							</label>
+						</>
+					)}
+				</div>
+			)}
 
-			{/* List */}
-			<div>
-				<h4 className="font-bold text-gray-700 mb-3">
+			{/* Список файлів (доступний всім, але кнопка видалення - ні) */}
+			<div className="space-y-3">
+				<h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
 					Knowledge Base ({documents.length})
-				</h4>
+				</h3>
 
-				{loading ? (
-					<p className="text-center text-gray-400">Loading...</p>
+				{isLoading ? (
+					<p className="text-center text-gray-500">
+						Loading documents...
+					</p>
 				) : documents.length === 0 ? (
-					<p className="text-center text-gray-400 py-4 bg-gray-50 rounded">
+					<p className="text-center text-gray-600 py-4">
 						No documents yet.
 					</p>
 				) : (
-					<ul className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-						{documents.map((doc) => (
-							<li
-								key={doc.id}
-								className="flex justify-between items-center p-3 bg-white border border-gray-100 rounded hover:shadow-sm transition"
-							>
-								<div className="flex items-center gap-3 overflow-hidden">
-									<div className="bg-blue-100 p-2 rounded text-blue-600">
-										<FileText size={18} />
-									</div>
-									<div className="truncate">
-										<p className="font-medium text-gray-800 text-sm truncate">
-											{doc.filename}
-										</p>
-										<p className="text-xs text-gray-400">
-											{(doc.size / 1024).toFixed(1)} KB •{' '}
-											{new Date(
-												doc.uploaded_at
-											).toLocaleDateString()}
-										</p>
-									</div>
+					documents.map((doc) => (
+						<div
+							key={doc.id}
+							className="flex items-center justify-between bg-[#1A1D21] p-4 rounded-lg border border-gray-800 hover:border-gray-600 transition-colors"
+						>
+							<div className="flex items-center gap-4 overflow-hidden">
+								<div className="p-2 bg-blue/10 text-blue rounded">
+									{doc.file_type?.includes('pdf') ? (
+										<FileText size={20} />
+									) : (
+										<File size={20} />
+									)}
 								</div>
+								<div className="min-w-0">
+									<p className="text-white text-sm font-medium truncate">
+										{doc.filename}
+									</p>
+									<p className="text-xs text-gray-500">
+										{(doc.size / 1024).toFixed(1)} KB •{' '}
+										{new Date(
+											doc.uploaded_at
+										).toLocaleDateString()}
+									</p>
+								</div>
+							</div>
+
+							{/* 4. Приховуємо кнопку видалення */}
+							{isAdmin && (
 								<button
 									onClick={() => handleDelete(doc.id)}
-									className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition"
+									className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded transition"
+									title="Delete document"
 								>
 									<Trash2 size={18} />
 								</button>
-							</li>
-						))}
-					</ul>
+							)}
+						</div>
+					))
 				)}
 			</div>
 		</div>

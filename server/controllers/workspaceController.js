@@ -50,20 +50,19 @@ const getWorkspaceById = async (req, res) => {
 	try {
 		const { id } = req.params;
 
-		// Перевірка: чи має юзер доступ до цього ID?
-		const memberCheck = await pool.query(
-			'SELECT * FROM workspace_members WHERE workspace_id = $1 AND user_id = $2',
-			[id, req.user.id]
-		);
+		const query = `
+            SELECT w.id, w.title, w.owner_id, w.created_at, wm.role
+            FROM workspaces w
+            JOIN workspace_members wm ON w.id = wm.workspace_id
+            WHERE w.id = $1 AND wm.user_id = $2
+        `;
 
-		if (memberCheck.rows.length === 0) {
+		const workspace = await pool.query(query, [id, req.user.id]);
+
+		if (workspace.rows.length === 0) {
 			return res.status(403).json('Access Denied');
 		}
 
-		const workspace = await pool.query(
-			'SELECT * FROM workspaces WHERE id = $1',
-			[id]
-		);
 		res.json(workspace.rows[0]);
 	} catch (err) {
 		console.error(err.message);
@@ -71,4 +70,42 @@ const getWorkspaceById = async (req, res) => {
 	}
 };
 
-module.exports = { createWorkspace, getAllWorkspaces, getWorkspaceById };
+// --- НОВА ФУНКЦІЯ ---
+const getWorkspaceMembers = async (req, res) => {
+	try {
+		const { id } = req.params;
+
+		// Перевіряємо, чи має поточний юзер доступ до воркспейсу
+		const accessCheck = await pool.query(
+			'SELECT * FROM workspace_members WHERE workspace_id = $1 AND user_id = $2',
+			[id, req.user.id]
+		);
+
+		if (accessCheck.rows.length === 0) {
+			return res.status(403).json('Access Denied');
+		}
+
+		// Отримуємо список учасників + дані з таблиці users
+		const query = `
+            SELECT u.id, u.nickname, u.email, u.avatar_url, wm.role, wm.joined_at
+            FROM workspace_members wm
+            JOIN users u ON wm.user_id = u.id
+            WHERE wm.workspace_id = $1
+            ORDER BY wm.role DESC, wm.joined_at ASC
+        `;
+
+		const members = await pool.query(query, [id]);
+		res.json(members.rows);
+	} catch (err) {
+		console.error(err.message);
+		res.status(500).send('Server Error');
+	}
+};
+
+// Експортуємо ВСІ функції
+module.exports = {
+	createWorkspace,
+	getAllWorkspaces,
+	getWorkspaceById,
+	getWorkspaceMembers,
+};

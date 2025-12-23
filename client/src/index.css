@@ -8,6 +8,6 @@
 	}
 
 	.input-field {
-		@apply w-full border border-gray-300 p-3 rounded focus:outline-none focus:border-blue-500 transition-colors text-textMain;
+		@apply w-full border border-gray-300 p-3 rounded focus:outline-none focus:border-blue transition-colors;
 	}
 }

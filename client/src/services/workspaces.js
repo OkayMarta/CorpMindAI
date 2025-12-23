@@ -13,4 +13,8 @@ export const workspaceService = {
 		const res = await api.get(`/workspaces/${id}`);
 		return res.data;
 	},
+	async getMembers(workspaceId) {
+		const res = await api.get(`/workspaces/${workspaceId}/members`);
+		return res.data;
+	},
 };

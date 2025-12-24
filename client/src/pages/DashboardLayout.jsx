@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { workspaceService } from '../services/workspaces';
 import Sidebar from '../components/Sidebar';
 import WorkspaceSettingsModal from '../components/WorkspaceSettingsModal';
+import CreateWorkspaceModal from '../components/CreateWorkspaceModal';
 import { Search, MessageSquare, Trash2, Settings, Plus } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -14,7 +15,10 @@ const DashboardLayout = () => {
 	const [searchQuery, setSearchQuery] = useState('');
 	const [loading, setLoading] = useState(true);
 	const [filter, setFilter] = useState('all');
+
+	// Стани для модалок
 	const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+	const [createModalOpen, setCreateModalOpen] = useState(false);
 	const [selectedWorkspace, setSelectedWorkspace] = useState(null);
 
 	useEffect(() => {
@@ -68,7 +72,35 @@ const DashboardLayout = () => {
 	};
 
 	const handleCreateClick = () => {
-		toast.info('Open Create Modal');
+		setCreateModalOpen(true);
+	};
+
+	// --- ЛОГІКА СТВОРЕННЯ ЧАТУ ---
+	const handleCreateSubmit = async (title) => {
+		try {
+			// 1. Створюємо чат через API
+			const newWorkspace = await workspaceService.create(title);
+
+			// 2. Додаємо поле role='owner' вручну, бо сервер повертає чистий об'єкт workspace,
+			// а наш список очікує поле role для коректного відображення бейджика
+			const newWorkspaceWithRole = { ...newWorkspace, role: 'owner' };
+
+			// 3. Оновлюємо список
+			setWorkspaces([newWorkspaceWithRole, ...workspaces]);
+
+			// 4. Закриваємо модалку
+			setCreateModalOpen(false);
+
+			toast.success('Workspace created!');
+
+			// 5. Одразу переходимо в новий чат
+			navigate(`/workspace/${newWorkspace.id}`);
+		} catch (error) {
+			console.error(error);
+			toast.error('Failed to create workspace');
+			// Прокидаємо помилку, щоб модалка знала, що треба зупинити лоадер
+			throw error;
+		}
 	};
 
 	const filteredWorkspaces = workspaces.filter((w) => {
@@ -310,6 +342,12 @@ const DashboardLayout = () => {
 					currentRole={selectedWorkspace.role}
 				/>
 			)}
+
+			<CreateWorkspaceModal
+				isOpen={createModalOpen}
+				onClose={() => setCreateModalOpen(false)}
+				onSubmit={handleCreateSubmit}
+			/>
 		</div>
 	);
 };

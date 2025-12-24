@@ -1,44 +1,84 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+// Сервіси
 import { workspaceService } from '../services/workspaces';
+import { invitationService } from '../services/invitations';
+
+// Компоненти
 import Sidebar from '../components/Sidebar';
 import WorkspaceSettingsModal from '../components/WorkspaceSettingsModal';
 import CreateWorkspaceModal from '../components/CreateWorkspaceModal';
+import NotificationsModal from '../components/NotificationsModal';
+
 import { Search, MessageSquare, Trash2, Settings, Plus } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 const DashboardLayout = () => {
 	const { user } = useAuth();
 	const navigate = useNavigate();
+
+	// --- СТАНИ ДАНИХ ---
 	const [workspaces, setWorkspaces] = useState([]);
-	const [searchQuery, setSearchQuery] = useState('');
+	const [invitations, setInvitations] = useState([]);
 	const [loading, setLoading] = useState(true);
+	const [searchQuery, setSearchQuery] = useState('');
 	const [filter, setFilter] = useState('all');
 
-	// Стани для модалок
+	// --- СТАНИ МОДАЛОК ---
 	const [settingsModalOpen, setSettingsModalOpen] = useState(false);
 	const [createModalOpen, setCreateModalOpen] = useState(false);
+	const [notificationsModalOpen, setNotificationsModalOpen] = useState(false);
+
 	const [selectedWorkspace, setSelectedWorkspace] = useState(null);
 
+	// Завантаження початкових даних
 	useEffect(() => {
-		fetchWorkspaces();
+		const fetchData = async () => {
+			try {
+				// Запускаємо обидва запити паралельно для швидкості
+				const [wsData, inviteData] = await Promise.all([
+					workspaceService.getAll(),
+					invitationService.getMyInvitations(),
+				]);
+
+				setWorkspaces(wsData);
+				setInvitations(inviteData);
+			} catch (error) {
+				console.error(error);
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		fetchData();
 	}, []);
 
-	const fetchWorkspaces = async () => {
+	// --- ЛОГІКА ЗАПРОШЕНЬ ---
+	const handleRespondToInvitation = async (token, action) => {
 		try {
-			const data = await workspaceService.getAll();
-			setWorkspaces(data);
+			const response = await invitationService.respond(token, action);
+
+			// Видаляємо оброблене запрошення зі списку
+			setInvitations((prev) => prev.filter((inv) => inv.token !== token));
+
+			if (action === 'accept') {
+				toast.success('Invitation accepted!');
+				// Якщо прийняли - оновлюємо список чатів, щоб новий чат з'явився
+				const updatedWorkspaces = await workspaceService.getAll();
+				setWorkspaces(updatedWorkspaces);
+			} else {
+				toast.info('Invitation declined');
+			}
 		} catch (error) {
 			console.error(error);
-		} finally {
-			setLoading(false);
+			toast.error('Failed to respond');
 		}
 	};
 
+	// --- ЛОГІКА ВОРКСПЕЙСІВ ---
 	const handleDeleteWorkspace = async (e, workspace) => {
 		e.stopPropagation();
-
 		const isOwner = workspace.role === 'owner';
 		const confirmMessage = isOwner
 			? `Are you sure you want to delete "${workspace.title}"? This cannot be undone.`
@@ -54,12 +94,9 @@ const DashboardLayout = () => {
 				await workspaceService.leave(workspace.id);
 				toast.success('You have left the workspace');
 			}
-
-			// Оновлюємо список локально, щоб чат зник миттєво
 			setWorkspaces((prev) => prev.filter((w) => w.id !== workspace.id));
 		} catch (error) {
 			console.error(error);
-			// Обробка помилки, якщо щось пішло не так на сервері
 			const errorMsg = error.response?.data || 'Operation failed';
 			toast.error(errorMsg);
 		}
@@ -71,34 +108,17 @@ const DashboardLayout = () => {
 		setSettingsModalOpen(true);
 	};
 
-	const handleCreateClick = () => {
-		setCreateModalOpen(true);
-	};
-
-	// --- ЛОГІКА СТВОРЕННЯ ЧАТУ ---
 	const handleCreateSubmit = async (title) => {
 		try {
-			// 1. Створюємо чат через API
 			const newWorkspace = await workspaceService.create(title);
-
-			// 2. Додаємо поле role='owner' вручну, бо сервер повертає чистий об'єкт workspace,
-			// а наш список очікує поле role для коректного відображення бейджика
 			const newWorkspaceWithRole = { ...newWorkspace, role: 'owner' };
-
-			// 3. Оновлюємо список
 			setWorkspaces([newWorkspaceWithRole, ...workspaces]);
-
-			// 4. Закриваємо модалку
 			setCreateModalOpen(false);
-
 			toast.success('Workspace created!');
-
-			// 5. Одразу переходимо в новий чат
 			navigate(`/workspace/${newWorkspace.id}`);
 		} catch (error) {
 			console.error(error);
 			toast.error('Failed to create workspace');
-			// Прокидаємо помилку, щоб модалка знала, що треба зупинити лоадер
 			throw error;
 		}
 	};
@@ -107,22 +127,18 @@ const DashboardLayout = () => {
 		const matchesSearch = w.title
 			.toLowerCase()
 			.includes(searchQuery.toLowerCase());
-
 		let matchesFilter = true;
 		if (filter === 'owner') {
 			matchesFilter = w.role === 'owner';
 		} else if (filter === 'member') {
 			matchesFilter = w.role === 'member';
 		}
-
 		return matchesSearch && matchesFilter;
 	});
 
 	return (
 		<div className="min-h-screen bg-dark text-light font-sans flex flex-col">
-			{/* --- HEADER --- */}
 			<header className="h-16 border-b border-gray-700 bg-dark flex items-center flex-shrink-0 z-20 fixed top-0 w-full">
-				{/* Ліва частина */}
 				<div className="w-72 flex items-center px-6 border-r border-gray-700 h-full">
 					<img
 						src="/logoCropped.svg"
@@ -133,8 +149,6 @@ const DashboardLayout = () => {
 						CorpMind<span className="text-gold">AI</span>
 					</span>
 				</div>
-
-				{/* Права частина: Пошук */}
 				<div className="flex-1 flex justify-center items-center px-4">
 					<div className="relative w-full max-w-xl">
 						<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
@@ -149,9 +163,12 @@ const DashboardLayout = () => {
 				</div>
 			</header>
 
-			{/* --- MAIN LAYOUT --- */}
 			<div className="flex flex-1 pt-16 h-screen">
-				<Sidebar onOpenCreate={handleCreateClick} />
+				<Sidebar
+					onOpenCreate={() => setCreateModalOpen(true)}
+					onOpenNotifications={() => setNotificationsModalOpen(true)}
+					notificationCount={invitations.length}
+				/>
 
 				<main className="flex-1 overflow-y-auto p-8 bg-[#0F1113] ml-72">
 					{loading ? (
@@ -159,34 +176,27 @@ const DashboardLayout = () => {
 							Loading...
 						</div>
 					) : workspaces.length === 0 ? (
-						/* EMPTY STATE */
 						<div className="flex flex-col items-center justify-center h-full text-center">
 							<div className="bg-gray-800 p-6 rounded-full mb-6">
 								<MessageSquare className="w-12 h-12 text-blue" />
 							</div>
 							<h2 className="text-2xl font-bold mb-2">
-								Welcome to CorpMind
-								<span className="text-gold">AI</span>
+								Welcome to CorpMind AI!
 							</h2>
 							<p className="text-gray-400 mb-8 max-w-md">
 								It looks like you don't have any workspaces yet.
-								Create your first workspace to start managing
-								documents and chatting with AI.
 							</p>
 							<button
-								onClick={handleCreateClick}
+								onClick={() => setCreateModalOpen(true)}
 								className="bg-gradient-btn hover:bg-gradient-btn-hover text-light font-semibold py-3 px-8 rounded-lg transition-all shadow-lg transform hover:scale-105 flex items-center gap-2"
 							>
-								<Plus className="w-5 h-5" />
-								Create New Workspace
+								<Plus className="w-5 h-5" /> Create New
+								Workspace
 							</button>
 						</div>
 					) : (
-						/* LIST VIEW */
 						<div className="max-w-5xl mx-auto">
-							{/* Filter Controls (All | Admin | Member) */}
 							<div className="flex items-center justify-between mb-6 select-none">
-								{/* Left Side: Filters */}
 								<div className="flex items-center text-l gap-3">
 									<button
 										onClick={() => setFilter('all')}
@@ -225,8 +235,6 @@ const DashboardLayout = () => {
 										Member
 									</button>
 								</div>
-
-								{/* Right Side: Counter */}
 								<div className="text-gray-500 text-sm font-medium">
 									Total:{' '}
 									<span className="text-gray ml-1">
@@ -235,7 +243,6 @@ const DashboardLayout = () => {
 								</div>
 							</div>
 
-							{/* Workspace List */}
 							<div className="space-y-3">
 								{filteredWorkspaces.map((workspace) => (
 									<div
@@ -245,30 +252,21 @@ const DashboardLayout = () => {
 												`/workspace/${workspace.id}`
 											)
 										}
-										className="group bg-[#1A1D21] border border-gray-800 hover:border-blue rounded-lg px-4 py-3 flex items-center cursor-pointer transition-all duration-200"
+										className="group bg-dark2 border border-gray-800 hover:border-blue rounded-lg px-4 py-3 flex items-center cursor-pointer transition-all duration-200"
 									>
-										{/* Icon */}
 										<div className="w-10 h-10 rounded bg-gray-800 flex flex-shrink-0 items-center justify-center text-blue group-hover:bg-blue group-hover:text-light transition-colors mr-4">
 											<MessageSquare className="w-5 h-5" />
 										</div>
-
-										{/* Content Row: Title --Spacer-- Date Role Actions */}
 										<div className="flex-1 flex items-center justify-between overflow-hidden">
-											{/* Title */}
 											<h3 className="font-semibold text-lg text-light group-hover:text-blue transition-colors truncate mr-4">
 												{workspace.title}
 											</h3>
-
-											{/* Meta Info & Actions */}
 											<div className="flex items-center gap-6 flex-shrink-0">
-												{/* Date */}
 												<span className="text-sm text-gray-500">
 													{new Date(
 														workspace.created_at
 													).toLocaleDateString()}
 												</span>
-
-												{/* Role Badge */}
 												<span
 													className={`text-xs px-2 py-0.5 rounded uppercase font-bold tracking-wider w-20 text-center ${
 														workspace.role ===
@@ -281,8 +279,6 @@ const DashboardLayout = () => {
 														? 'Admin'
 														: 'Member'}
 												</span>
-
-												{/* Actions Buttons */}
 												<div className="flex items-center gap-2 w-16 justify-end">
 													<button
 														onClick={(e) =>
@@ -296,7 +292,6 @@ const DashboardLayout = () => {
 													>
 														<Settings className="w-5 h-5" />
 													</button>
-
 													<button
 														onClick={(e) =>
 															handleDeleteWorkspace(
@@ -319,8 +314,6 @@ const DashboardLayout = () => {
 										</div>
 									</div>
 								))}
-
-								{/* Empty Search Result Message */}
 								{filteredWorkspaces.length === 0 &&
 									workspaces.length > 0 && (
 										<div className="text-center text-gray-500 mt-10">
@@ -334,6 +327,7 @@ const DashboardLayout = () => {
 				</main>
 			</div>
 
+			{/* --- Модалки --- */}
 			{selectedWorkspace && (
 				<WorkspaceSettingsModal
 					isOpen={settingsModalOpen}
@@ -347,6 +341,13 @@ const DashboardLayout = () => {
 				isOpen={createModalOpen}
 				onClose={() => setCreateModalOpen(false)}
 				onSubmit={handleCreateSubmit}
+			/>
+
+			<NotificationsModal
+				isOpen={notificationsModalOpen}
+				onClose={() => setNotificationsModalOpen(false)}
+				invitations={invitations}
+				onRespond={handleRespondToInvitation}
 			/>
 		</div>
 	);

@@ -64,7 +64,7 @@ const createInvitation = async (req, res) => {
 	}
 };
 
-// 2. Отримати мої запрошення (GET /api/invitations) - для "Notification Center"
+// 2. Отримати мої запрошення
 const getMyInvitations = async (req, res) => {
 	try {
 		const userEmail = await pool.query(
@@ -73,9 +73,15 @@ const getMyInvitations = async (req, res) => {
 		);
 		const email = userEmail.rows[0].email;
 
-		// Отримуємо запрошення разом з назвою воркспейсу та нікнеймом відправника
 		const query = `
-            SELECT i.id, i.token, i.status, w.title as workspace_title, u.nickname as sender_nickname 
+            SELECT 
+                i.id, 
+                i.token, 
+                i.status, 
+                i.created_at, 
+                w.title as workspace_title, 
+                u.nickname as sender_nickname,
+                u.avatar_url as sender_avatar
             FROM invitations i
             JOIN workspaces w ON i.workspace_id = w.id
             JOIN users u ON i.sender_id = u.id

@@ -271,42 +271,63 @@ const WorkspaceView = () => {
 								</p>
 							</div>
 						) : (
-							messages.map((msg) => (
-								<div
-									key={msg.id}
-									className={`flex gap-4 max-w-3xl ${
-										msg.role === 'user'
-											? 'ml-auto flex-row-reverse'
-											: ''
-									}`}
-								>
-									{/* Avatar */}
-									<div
-										className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-											msg.role === 'user'
-												? 'bg-blue/20 text-blue'
-												: 'bg-gold/20 text-gold'
-										}`}
-									>
-										{msg.role === 'user' ? (
-											<User className="w-5 h-5" />
-										) : (
-											<Bot className="w-5 h-5" />
-										)}
-									</div>
+							messages.map((msg) => {
+								const isUser = msg.role === 'user';
+								const isOwner = workspace?.role === 'owner';
 
-									{/* Bubble */}
+								let avatarStyle = '';
+								if (!isUser) {
+									avatarStyle = 'bg-blue/20 text-blue';
+								} else {
+									avatarStyle = isOwner
+										? 'bg-gold/20 text-gold'
+										: 'bg-purple/20 text-purple';
+								}
+
+								// Бульбашка повідомлення
+								let bubbleStyle = '';
+								if (!isUser) {
+									bubbleStyle =
+										'bg-dark2 text-gray-200 rounded-tl-sm border border-gray-700';
+								} else {
+									if (isOwner) {
+										bubbleStyle =
+											'bg-gold/10 text-light rounded-tr-sm border border-gold/20';
+									} else {
+										bubbleStyle =
+											'bg-purple/10 text-light rounded-tr-sm border border-purple/20';
+									}
+								}
+
+								return (
 									<div
-										className={`p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
-											msg.role === 'user'
-												? 'bg-blue/10 text-light rounded-tr-sm border border-blue/20'
-												: 'bg-dark2 text-gray-200 rounded-tl-sm border border-gray-700'
+										key={msg.id}
+										className={`flex gap-4 max-w-3xl ${
+											isUser
+												? 'ml-auto flex-row-reverse'
+												: ''
 										}`}
 									>
-										{msg.content}
+										{/* Avatar */}
+										<div
+											className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${avatarStyle}`}
+										>
+											{isUser ? (
+												<User className="w-5 h-5" />
+											) : (
+												<Bot className="w-5 h-5" />
+											)}
+										</div>
+
+										{/* Message Bubble */}
+										<div
+											className={`p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${bubbleStyle}`}
+										>
+											{msg.content}
+										</div>
 									</div>
-								</div>
-							))
+								);
+							})
 						)}
 						{/* Invisible element to scroll to */}
 						<div ref={messagesEndRef} />

@@ -1,241 +1,385 @@
-import React, { useState, useEffect } from 'react';
-import { X, FileText, Users, Mail, Trash2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+	X,
+	FileText,
+	Users,
+	Upload,
+	Trash2,
+	Loader2,
+	Mail,
+	MessageSquare,
+} from 'lucide-react';
 import { toast } from 'react-toastify';
-import { invitationService } from '../services/invitations';
+
+// Сервіси
+import { documentService } from '../services/documents';
 import { workspaceService } from '../services/workspaces';
-import DocumentsManager from '../modules/Documents/DocumentsManager';
+import { invitationService } from '../services/invitations';
 
-const WorkspaceSettingsModal = ({ isOpen, onClose, workspace }) => {
-	// 1. Всі useState (Хуки)
-	const [activeTab, setActiveTab] = useState('documents');
-	const [inviteEmail, setInviteEmail] = useState('');
-	const [isLoadingInvite, setIsLoadingInvite] = useState(false);
+const WorkspaceSettingsModal = ({
+	isOpen,
+	onClose,
+	workspaceId,
+	currentRole,
+}) => {
+	// --- State ---
+	const [activeTab, setActiveTab] = useState('documents'); // 'documents' | 'members'
+	const [loading, setLoading] = useState(false);
 
+	// Data
+	const [documents, setDocuments] = useState([]);
 	const [members, setMembers] = useState([]);
-	const [isLoadingMembers, setIsLoadingMembers] = useState(false);
 
-	// 2. Логічні змінні
-	const isAdmin = workspace?.role === 'owner' || workspace?.role === 'admin';
+	// Upload State
+	const [uploading, setUploading] = useState(false);
+	const fileInputRef = useRef(null);
 
-	// 3. useEffect (Хук)
+	// Invite State
+	const [inviteEmail, setInviteEmail] = useState('');
+	const [inviting, setInviting] = useState(false);
+
+	const isAdmin = currentRole === 'owner';
+
+	// --- Effects ---
 	useEffect(() => {
-		if (activeTab === 'members' && workspace?.id && isOpen) {
-			fetchMembers();
+		if (isOpen && workspaceId) {
+			fetchData();
 		}
-	}, [activeTab, workspace?.id, isOpen]);
+	}, [isOpen, workspaceId, activeTab]);
 
-	// Допоміжні функції
-	const fetchMembers = async () => {
-		setIsLoadingMembers(true);
+	const fetchData = async () => {
+		setLoading(true);
 		try {
-			const data = await workspaceService.getMembers(workspace.id);
-			setMembers(data);
-		} catch (err) {
-			console.error(err);
-			toast.error('Failed to load members');
+			if (activeTab === 'documents') {
+				const docs = await documentService.getAll(workspaceId);
+				setDocuments(docs);
+			} else if (activeTab === 'members') {
+				const team = await workspaceService.getMembers(workspaceId);
+				setMembers(team);
+			}
+		} catch (error) {
+			console.error(error);
+			toast.error('Failed to load data');
 		} finally {
-			setIsLoadingMembers(false);
+			setLoading(false);
 		}
 	};
 
-	const handleSendInvite = async (e) => {
-		e.preventDefault();
-		if (!inviteEmail) return;
+	// --- Document Handlers ---
+	const handleFileSelect = async (e) => {
+		const file = e.target.files[0];
+		if (!file) return;
 
-		setIsLoadingInvite(true);
+		setUploading(true);
 		try {
-			await invitationService.sendInvite(workspace.id, inviteEmail);
+			const newDoc = await documentService.upload(workspaceId, file);
+			setDocuments([newDoc, ...documents]);
+			toast.success('Document uploaded & indexed!');
+		} catch (error) {
+			console.error(error);
+			toast.error('Upload failed. Only PDF, DOCX, TXT allowed.');
+		} finally {
+			setUploading(false);
+			if (fileInputRef.current) fileInputRef.current.value = '';
+		}
+	};
+
+	const handleDeleteDocument = async (docId) => {
+		if (
+			!window.confirm(
+				'Are you sure? This will remove the document from the AI knowledge base.'
+			)
+		)
+			return;
+		try {
+			await documentService.delete(docId);
+			setDocuments((prev) => prev.filter((d) => d.id !== docId));
+			toast.success('Document deleted');
+		} catch (error) {
+			toast.error('Failed to delete document');
+		}
+	};
+
+	// --- Member Handlers ---
+	const handleInvite = async (e) => {
+		e.preventDefault();
+		if (!inviteEmail.trim()) return;
+
+		setInviting(true);
+		try {
+			await invitationService.sendInvite(workspaceId, inviteEmail);
 			toast.success(`Invitation sent to ${inviteEmail}`);
 			setInviteEmail('');
-		} catch (err) {
-			console.error(err);
-			const errorMsg =
-				err.response?.data?.message ||
-				err.response?.data ||
-				'Failed to send invite';
-			toast.error(errorMsg);
+		} catch (error) {
+			console.error(error);
+			toast.error(error.response?.data || 'Failed to send invite');
 		} finally {
-			setIsLoadingInvite(false);
+			setInviting(false);
 		}
 	};
 
-	// 4. ТІЛЬКИ ТУТ можна робити перевірку на закриття
-	if (!isOpen || !workspace) return null;
+	if (!isOpen) return null;
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-			<div className="bg-dark w-full max-w-4xl rounded-xl shadow-2xl border border-gray-700 flex flex-col max-h-[90vh]">
-				{/* Header */}
-				<div className="flex items-center justify-between p-6 border-b border-gray-700 bg-[#1A1D21] rounded-t-xl">
-					<div>
-						<h2 className="text-xl font-bold text-white tracking-wide">
-							{workspace.title}
-						</h2>
-						<p className="text-xs text-gray-400 uppercase tracking-wider mt-1">
-							Workspace Settings
-						</p>
-					</div>
+		<div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+			<div className="bg-dark2 border border-gray-700 rounded-xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[85vh]">
+				{/* --- HEADER --- */}
+				<div className="flex justify-between items-center p-6 border-b border-gray-700">
+					<h2 className="text-xl font-bold text-light flex items-center gap-2">
+						<MessageSquare className="w-5 h-5 text-blue" />
+						Workspace Settings
+					</h2>
 					<button
 						onClick={onClose}
-						className="text-gray-400 hover:text-white transition p-1 hover:bg-gray-700 rounded-full"
+						className="text-gray-400 hover:text-light transition-colors"
 					>
-						<X size={24} />
+						<X className="w-6 h-6" />
 					</button>
 				</div>
 
-				{/* Tabs */}
-				<div className="flex border-b border-gray-700 px-6 bg-[#1A1D21]">
+				{/* --- TABS --- */}
+				<div className="flex border-b border-gray-700 px-6 gap-6">
 					<button
 						onClick={() => setActiveTab('documents')}
-						className={`py-4 mr-8 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
+						className={`py-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
 							activeTab === 'documents'
-								? 'border-purple text-purple'
-								: 'border-transparent text-gray-400 hover:text-white'
+								? 'border-blue text-blue'
+								: 'border-transparent text-gray-400 hover:text-light'
 						}`}
 					>
-						<FileText size={18} /> Knowledge Base
+						<FileText className="w-4 h-4" /> Documents (Knowledge
+						Base)
 					</button>
 					<button
 						onClick={() => setActiveTab('members')}
 						className={`py-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
 							activeTab === 'members'
-								? 'border-purple text-purple'
-								: 'border-transparent text-gray-400 hover:text-white'
+								? 'border-blue text-blue'
+								: 'border-transparent text-gray-400 hover:text-light'
 						}`}
 					>
-						<Users size={18} /> Team Members
+						<Users className="w-4 h-4" /> Team Members
 					</button>
 				</div>
 
-				{/* Content */}
-				<div className="p-6 overflow-y-auto flex-1 bg-dark">
+				{/* --- CONTENT AREA --- */}
+				<div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+					{/* ===== DOCUMENTS TAB ===== */}
 					{activeTab === 'documents' && (
-						<div className="h-full">
-							<DocumentsManager
-								workspaceId={workspace.id}
-								userRole={workspace.role}
-							/>
+						<div className="space-y-6">
+							{/* Upload Area (Admin Only) */}
+							{isAdmin && (
+								<div
+									className={`border-2 border-dashed border-gray-700 rounded-lg p-8 flex flex-col items-center justify-center text-center transition-all ${
+										uploading
+											? 'bg-gray-800 opacity-50'
+											: 'hover:border-blue hover:bg-gray-800/50 cursor-pointer'
+									}`}
+									onClick={() =>
+										!uploading &&
+										fileInputRef.current.click()
+									}
+								>
+									<input
+										type="file"
+										ref={fileInputRef}
+										onChange={handleFileSelect}
+										className="hidden"
+										accept=".pdf,.docx,.txt"
+									/>
+									{uploading ? (
+										<>
+											<Loader2 className="w-8 h-8 text-blue animate-spin mb-2" />
+											<p className="text-light font-medium">
+												Processing & Indexing...
+											</p>
+											<p className="text-xs text-gray-500">
+												This might take a few seconds
+											</p>
+										</>
+									) : (
+										<>
+											<div className="bg-gray-800 p-3 rounded-full mb-3">
+												<Upload className="w-6 h-6 text-blue" />
+											</div>
+											<p className="text-light font-medium">
+												Click to Upload Document
+											</p>
+											<p className="text-xs text-gray-500 mt-1">
+												Supported: PDF, DOCX, TXT (Max
+												10MB)
+											</p>
+										</>
+									)}
+								</div>
+							)}
+
+							{/* Documents List */}
+							<div>
+								<h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
+									Uploaded Files ({documents.length})
+								</h3>
+								{loading ? (
+									<div className="text-center py-4 text-gray-500">
+										Loading...
+									</div>
+								) : documents.length === 0 ? (
+									<div className="text-center py-8 bg-dark rounded-lg border border-gray-800">
+										<p className="text-gray-400">
+											No documents found.
+										</p>
+										{isAdmin && (
+											<p className="text-xs text-gray-500 mt-1">
+												Upload files to start chatting
+												with them.
+											</p>
+										)}
+									</div>
+								) : (
+									<div className="space-y-2">
+										{documents.map((doc) => (
+											<div
+												key={doc.id}
+												className="flex items-center justify-between bg-dark border border-gray-800 p-3 rounded-lg hover:border-gray-600 transition-colors"
+											>
+												<div className="flex items-center gap-3 overflow-hidden">
+													<div className="bg-blue/10 p-2 rounded text-blue">
+														<FileText className="w-5 h-5" />
+													</div>
+													<div className="min-w-0">
+														<p className="text-light text-sm font-medium truncate">
+															{doc.filename}
+														</p>
+														<p className="text-xs text-gray-500">
+															{(
+																doc.size /
+																1024 /
+																1024
+															).toFixed(2)}{' '}
+															MB •{' '}
+															{new Date(
+																doc.uploaded_at
+															).toLocaleDateString()}
+														</p>
+													</div>
+												</div>
+												{isAdmin && (
+													<button
+														onClick={() =>
+															handleDeleteDocument(
+																doc.id
+															)
+														}
+														className="p-2 text-gray-500 hover:text-uiError hover:bg-uiError/10 rounded-full transition-colors"
+														title="Delete File"
+													>
+														<Trash2 className="w-4 h-4" />
+													</button>
+												)}
+											</div>
+										))}
+									</div>
+								)}
+							</div>
 						</div>
 					)}
 
+					{/* ===== MEMBERS TAB ===== */}
 					{activeTab === 'members' && (
-						<div className="max-w-xl mx-auto space-y-8">
-							{/* Блок запрошення (тільки для адмінів) */}
+						<div className="space-y-6">
+							{/* Invite Form (Admin Only) */}
 							{isAdmin && (
-								<div className="bg-[#1A1D21] p-6 rounded-xl border border-gray-700">
-									<div className="flex items-center gap-3 mb-4">
-										<div className="p-2 bg-purple/10 rounded-lg text-purple">
-											<Mail size={20} />
-										</div>
-										<h3 className="text-lg font-semibold text-white">
-											Invite New Member
-										</h3>
-									</div>
-
-									<form
-										onSubmit={handleSendInvite}
-										className="flex flex-col sm:flex-row gap-3"
-									>
+								<form
+									onSubmit={handleInvite}
+									className="flex gap-2"
+								>
+									<div className="relative flex-1">
+										<Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
 										<input
 											type="email"
-											placeholder="Enter colleague email..."
+											placeholder="Enter colleague's email..."
+											className="w-full bg-dark border border-gray-700 text-light rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:border-blue"
 											value={inviteEmail}
 											onChange={(e) =>
 												setInviteEmail(e.target.value)
 											}
-											className="flex-1 input-field bg-dark text-white border-gray-600 focus:border-purple"
-											required
 										/>
-										<button
-											type="submit"
-											disabled={isLoadingInvite}
-											className="btn-outlined bg-purple border-purple hover:bg-white hover:text-purple whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-										>
-											{isLoadingInvite
-												? 'Sending...'
-												: 'Send Invite'}
-										</button>
-									</form>
-									<p className="text-xs text-gray-500 mt-3">
-										The user must utilize this email address
-										to accept the invitation within
-										CorpMind.
-									</p>
-								</div>
+									</div>
+									<button
+										type="submit"
+										disabled={inviting || !inviteEmail}
+										className={`px-4 py-2.5 rounded-lg font-medium text-light flex items-center gap-2 ${
+											inviting || !inviteEmail
+												? 'bg-gray-700 cursor-not-allowed text-gray-400'
+												: 'bg-gradient-btn hover:bg-gradient-btn-hover'
+										}`}
+									>
+										{inviting ? (
+											<Loader2 className="w-4 h-4 animate-spin" />
+										) : (
+											'Invite'
+										)}
+									</button>
+								</form>
 							)}
 
-							{/* Список учасників */}
+							{/* Members List */}
 							<div>
-								<h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex justify-between items-center">
-									<span>Current Members</span>
-									<span className="text-xs bg-gray-800 px-2 py-1 rounded text-gray-300">
-										{members.length}
-									</span>
+								<h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
+									Team Members ({members.length})
 								</h3>
-
-								{isLoadingMembers ? (
+								{loading ? (
 									<div className="text-center py-4 text-gray-500">
-										Loading members...
+										Loading...
 									</div>
 								) : (
 									<div className="space-y-2">
 										{members.map((member) => (
 											<div
 												key={member.id}
-												className="flex items-center justify-between bg-[#1A1D21] p-3 rounded-lg border border-gray-800 hover:border-gray-600 transition-colors"
+												className="flex items-center justify-between bg-dark border border-gray-800 p-3 rounded-lg"
 											>
 												<div className="flex items-center gap-3">
-													<div
-														className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white uppercase shadow-sm ${
-															member.role ===
-															'owner'
-																? 'bg-gradient-btn'
-																: 'bg-gray-600'
-														}`}
-													>
-														{member.nickname?.charAt(
-															0
-														)}
-													</div>
-
-													<div>
-														<div className="flex items-center gap-2">
-															<p className="text-sm text-white font-medium">
-																{
-																	member.nickname
-																}
-															</p>
-															{member.role ===
-															'owner' ? (
-																<span className="text-[10px] bg-purple/20 text-purple px-1.5 py-0.5 rounded border border-purple/30">
-																	OWNER
-																</span>
-															) : (
-																<span className="text-[10px] bg-gray-700 text-gray-300 px-1.5 py-0.5 rounded">
-																	MEMBER
-																</span>
-															)}
+													{member.avatar_url ? (
+														<img
+															src={
+																member.avatar_url
+															}
+															alt={
+																member.nickname
+															}
+															className="w-10 h-10 rounded-full object-cover"
+														/>
+													) : (
+														<div className="w-10 h-10 rounded-full bg-gradient-btn flex items-center justify-center text-light font-bold text-sm">
+															{member.nickname
+																?.substring(
+																	0,
+																	2
+																)
+																.toUpperCase()}
 														</div>
+													)}
+													<div>
+														<p className="text-light text-sm font-medium flex items-center gap-2">
+															{member.nickname}
+														</p>
 														<p className="text-xs text-gray-500">
 															{member.email}
 														</p>
 													</div>
 												</div>
-
-												{isAdmin &&
-													member.role !== 'owner' && (
-														<button
-															className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition"
-															title="Remove user"
-															onClick={() =>
-																toast.info(
-																	'Remove functionality pending'
-																)
-															}
-														>
-															<Trash2 size={16} />
-														</button>
-													)}
+												<span
+													className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider ${
+														member.role === 'owner'
+															? 'bg-gold/20 text-gold'
+															: 'bg-purple/20 text-purple'
+													}`}
+												>
+													{member.role === 'owner'
+														? 'Admin'
+														: 'Member'}
+												</span>
 											</div>
 										))}
 									</div>

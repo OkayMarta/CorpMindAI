@@ -13,7 +13,7 @@ const DashboardLayout = () => {
 	const [workspaces, setWorkspaces] = useState([]);
 	const [searchQuery, setSearchQuery] = useState('');
 	const [loading, setLoading] = useState(true);
-
+	const [filter, setFilter] = useState('all');
 	const [settingsModalOpen, setSettingsModalOpen] = useState(false);
 	const [selectedWorkspace, setSelectedWorkspace] = useState(null);
 
@@ -38,7 +38,9 @@ const DashboardLayout = () => {
 			return;
 
 		try {
+			// Тут виклик API для видалення
 			toast.info('Delete functionality to be implemented in API');
+			// setWorkspaces(prev => prev.filter(w => w.id !== id));
 		} catch (error) {
 			toast.error('Failed to delete workspace');
 		}
@@ -54,9 +56,20 @@ const DashboardLayout = () => {
 		toast.info('Open Create Modal');
 	};
 
-	const filteredWorkspaces = workspaces.filter((w) =>
-		w.title.toLowerCase().includes(searchQuery.toLowerCase())
-	);
+	const filteredWorkspaces = workspaces.filter((w) => {
+		const matchesSearch = w.title
+			.toLowerCase()
+			.includes(searchQuery.toLowerCase());
+
+		let matchesFilter = true;
+		if (filter === 'owner') {
+			matchesFilter = w.role === 'owner';
+		} else if (filter === 'member') {
+			matchesFilter = w.role === 'member';
+		}
+
+		return matchesSearch && matchesFilter;
+	});
 
 	return (
 		<div className="min-h-screen bg-dark text-light font-sans flex flex-col">
@@ -105,7 +118,8 @@ const DashboardLayout = () => {
 								<MessageSquare className="w-12 h-12 text-blue" />
 							</div>
 							<h2 className="text-2xl font-bold mb-2">
-								Welcome to CorpMind AI!
+								Welcome to CorpMind
+								<span className="text-gold">AI</span>
 							</h2>
 							<p className="text-gray-400 mb-8 max-w-md">
 								It looks like you don't have any workspaces yet.
@@ -123,15 +137,58 @@ const DashboardLayout = () => {
 					) : (
 						/* LIST VIEW */
 						<div className="max-w-5xl mx-auto">
-							<div className="flex justify-between items-end mb-6">
-								<h1 className="text-2xl font-bold">
-									Your Workspaces
-								</h1>
-								<span className="text-gray-400 text-sm">
-									{filteredWorkspaces.length} total
-								</span>
+							{/* Filter Controls (All | Admin | Member) */}
+							<div className="flex items-center justify-between mb-6 select-none">
+								{/* Left Side: Filters */}
+								<div className="flex items-center text-l gap-3">
+									<button
+										onClick={() => setFilter('all')}
+										className={`transition-colors duration-200 ${
+											filter === 'all'
+												? 'text-light font-medium'
+												: 'text-gray-500 hover:text-gray-300 font-light'
+										}`}
+									>
+										All
+									</button>
+									<span className="text-gray-600 font-thin text-xl pb-1">
+										|
+									</span>
+									<button
+										onClick={() => setFilter('owner')}
+										className={`transition-colors duration-200 ${
+											filter === 'owner'
+												? 'text-light font-medium'
+												: 'text-gray-500 hover:text-gray-300 font-light'
+										}`}
+									>
+										Admin
+									</button>
+									<span className="text-gray-600 font-thin text-xl pb-1">
+										|
+									</span>
+									<button
+										onClick={() => setFilter('member')}
+										className={`transition-colors duration-200 ${
+											filter === 'member'
+												? 'text-light font-medium'
+												: 'text-gray-500 hover:text-gray-300 font-light'
+										}`}
+									>
+										Member
+									</button>
+								</div>
+
+								{/* Right Side: Counter */}
+								<div className="text-gray-500 text-sm font-medium">
+									Total:{' '}
+									<span className="text-gray ml-1">
+										{filteredWorkspaces.length}
+									</span>
+								</div>
 							</div>
 
+							{/* Workspace List */}
 							<div className="space-y-3">
 								{filteredWorkspaces.map((workspace) => (
 									<div
@@ -141,67 +198,87 @@ const DashboardLayout = () => {
 												`/workspace/${workspace.id}`
 											)
 										}
-										className="group bg-[#1A1D21] border border-gray-800 hover:border-blue rounded-lg p-4 flex items-center justify-between cursor-pointer transition-all duration-200"
+										className="group bg-[#1A1D21] border border-gray-800 hover:border-blue rounded-lg px-4 py-3 flex items-center cursor-pointer transition-all duration-200"
 									>
-										<div className="flex items-center gap-4">
-											<div className="w-10 h-10 rounded bg-gray-800 flex items-center justify-center text-blue group-hover:bg-blue group-hover:text-light transition-colors">
-												<MessageSquare className="w-5 h-5" />
-											</div>
-											<div>
-												<h3 className="font-semibold text-lg text-light group-hover:text-blue transition-colors">
-													{workspace.title}
-												</h3>
-												<div className="flex items-center gap-2 mt-1">
-													<span
-														className={`text-xs px-2 py-0.5 rounded uppercase font-bold tracking-wider ${
-															workspace.role ===
-															'owner'
-																? 'bg-gold/20 text-gold'
-																: 'bg-purple/20 text-purple'
-														}`}
+										{/* Icon */}
+										<div className="w-10 h-10 rounded bg-gray-800 flex flex-shrink-0 items-center justify-center text-blue group-hover:bg-blue group-hover:text-light transition-colors mr-4">
+											<MessageSquare className="w-5 h-5" />
+										</div>
+
+										{/* Content Row: Title --Spacer-- Date Role Actions */}
+										<div className="flex-1 flex items-center justify-between overflow-hidden">
+											{/* Title */}
+											<h3 className="font-semibold text-lg text-light group-hover:text-blue transition-colors truncate mr-4">
+												{workspace.title}
+											</h3>
+
+											{/* Meta Info & Actions */}
+											<div className="flex items-center gap-6 flex-shrink-0">
+												{/* Date */}
+												<span className="text-sm text-gray-500">
+													{new Date(
+														workspace.created_at
+													).toLocaleDateString()}
+												</span>
+
+												{/* Role Badge */}
+												<span
+													className={`text-xs px-2 py-0.5 rounded uppercase font-bold tracking-wider w-20 text-center ${
+														workspace.role ===
+														'owner'
+															? 'bg-gold/20 text-gold'
+															: 'bg-purple/20 text-purple'
+													}`}
+												>
+													{workspace.role === 'owner'
+														? 'Admin'
+														: 'Member'}
+												</span>
+
+												{/* Actions Buttons */}
+												<div className="flex items-center gap-2 w-16 justify-end">
+													<button
+														onClick={(e) =>
+															handleOpenSettings(
+																e,
+																workspace
+															)
+														}
+														className="p-1.5 text-gray-400 hover:text-light hover:bg-gray-700 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+														title="Settings"
 													>
-														{workspace.role}
-													</span>
-													<span className="text-xs text-gray-500">
-														{new Date(
-															workspace.created_at
-														).toLocaleDateString()}
-													</span>
+														<Settings className="w-5 h-5" />
+													</button>
+
+													{workspace.role ===
+														'owner' && (
+														<button
+															onClick={(e) =>
+																handleDeleteWorkspace(
+																	e,
+																	workspace.id
+																)
+															}
+															className="p-1.5 text-gray-400 hover:text-uiError hover:bg-uiError/10 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+															title="Delete Workspace"
+														>
+															<Trash2 className="w-5 h-5" />
+														</button>
+													)}
 												</div>
 											</div>
 										</div>
-
-										<div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-											<button
-												onClick={(e) =>
-													handleOpenSettings(
-														e,
-														workspace
-													)
-												}
-												className="p-2 text-gray-400 hover:text-light hover:bg-gray-700 rounded-full transition-colors"
-												title="Settings"
-											>
-												<Settings className="w-5 h-5" />
-											</button>
-
-											{workspace.role === 'owner' && (
-												<button
-													onClick={(e) =>
-														handleDeleteWorkspace(
-															e,
-															workspace.id
-														)
-													}
-													className="p-2 text-gray-400 hover:text-uiError hover:bg-uiError/10 rounded-full transition-colors"
-													title="Delete Workspace"
-												>
-													<Trash2 className="w-5 h-5" />
-												</button>
-											)}
-										</div>
 									</div>
 								))}
+
+								{/* Empty Search Result Message */}
+								{filteredWorkspaces.length === 0 &&
+									workspaces.length > 0 && (
+										<div className="text-center text-gray-500 mt-10">
+											No workspaces found in this
+											category.
+										</div>
+									)}
 							</div>
 						</div>
 					)}

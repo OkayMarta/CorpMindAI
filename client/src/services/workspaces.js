@@ -17,4 +17,12 @@ export const workspaceService = {
 		const res = await api.get(`/workspaces/${workspaceId}/members`);
 		return res.data;
 	},
+	async delete(id) {
+		const res = await api.delete(`/workspaces/${id}`);
+		return res.data;
+	},
+	async leave(id) {
+		const res = await api.delete(`/workspaces/${id}/leave`);
+		return res.data;
+	},
 };

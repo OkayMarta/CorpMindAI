@@ -32,17 +32,32 @@ const DashboardLayout = () => {
 		}
 	};
 
-	const handleDeleteWorkspace = async (e, id) => {
+	const handleDeleteWorkspace = async (e, workspace) => {
 		e.stopPropagation();
-		if (!window.confirm('Are you sure you want to delete this workspace?'))
-			return;
+
+		const isOwner = workspace.role === 'owner';
+		const confirmMessage = isOwner
+			? `Are you sure you want to delete "${workspace.title}"? This cannot be undone.`
+			: `Are you sure you want to leave "${workspace.title}"?`;
+
+		if (!window.confirm(confirmMessage)) return;
 
 		try {
-			// Тут виклик API для видалення
-			toast.info('Delete functionality to be implemented in API');
-			// setWorkspaces(prev => prev.filter(w => w.id !== id));
+			if (isOwner) {
+				await workspaceService.delete(workspace.id);
+				toast.success('Workspace deleted successfully');
+			} else {
+				await workspaceService.leave(workspace.id);
+				toast.success('You have left the workspace');
+			}
+
+			// Оновлюємо список локально, щоб чат зник миттєво
+			setWorkspaces((prev) => prev.filter((w) => w.id !== workspace.id));
 		} catch (error) {
-			toast.error('Failed to delete workspace');
+			console.error(error);
+			// Обробка помилки, якщо щось пішло не так на сервері
+			const errorMsg = error.response?.data || 'Operation failed';
+			toast.error(errorMsg);
 		}
 	};
 
@@ -250,21 +265,23 @@ const DashboardLayout = () => {
 														<Settings className="w-5 h-5" />
 													</button>
 
-													{workspace.role ===
-														'owner' && (
-														<button
-															onClick={(e) =>
-																handleDeleteWorkspace(
-																	e,
-																	workspace.id
-																)
-															}
-															className="p-1.5 text-gray-400 hover:text-uiError hover:bg-uiError/10 rounded-full transition-colors opacity-0 group-hover:opacity-100"
-															title="Delete Workspace"
-														>
-															<Trash2 className="w-5 h-5" />
-														</button>
-													)}
+													<button
+														onClick={(e) =>
+															handleDeleteWorkspace(
+																e,
+																workspace
+															)
+														}
+														className="p-1.5 text-gray-400 hover:text-uiError hover:bg-uiError/10 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+														title={
+															workspace.role ===
+															'owner'
+																? 'Delete Workspace'
+																: 'Leave Workspace'
+														}
+													>
+														<Trash2 className="w-5 h-5" />
+													</button>
 												</div>
 											</div>
 										</div>

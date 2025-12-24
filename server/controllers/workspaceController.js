@@ -70,7 +70,6 @@ const getWorkspaceById = async (req, res) => {
 	}
 };
 
-// --- НОВА ФУНКЦІЯ ---
 const getWorkspaceMembers = async (req, res) => {
 	try {
 		const { id } = req.params;
@@ -102,10 +101,58 @@ const getWorkspaceMembers = async (req, res) => {
 	}
 };
 
-// Експортуємо ВСІ функції
+// Видалити воркспейс (Тільки власник)
+const deleteWorkspace = async (req, res) => {
+	try {
+		const { id } = req.params;
+		const userId = req.user.id;
+
+		// Перевіряємо, чи юзер є власником
+		const check = await pool.query(
+			'SELECT * FROM workspaces WHERE id = $1 AND owner_id = $2',
+			[id, userId]
+		);
+
+		if (check.rows.length === 0) {
+			return res
+				.status(403)
+				.json('Not authorized to delete this workspace');
+		}
+
+		// Видаляємо воркспейс
+		await pool.query('DELETE FROM workspaces WHERE id = $1', [id]);
+
+		res.json({ message: 'Workspace deleted successfully' });
+	} catch (err) {
+		console.error(err.message);
+		res.status(500).send('Server Error');
+	}
+};
+
+// Покинути воркспейс (Для учасника)
+const leaveWorkspace = async (req, res) => {
+	try {
+		const { id } = req.params;
+		const userId = req.user.id;
+
+		// Видаляємо запис про членство
+		await pool.query(
+			'DELETE FROM workspace_members WHERE workspace_id = $1 AND user_id = $2',
+			[id, userId]
+		);
+
+		res.json({ message: 'Left workspace successfully' });
+	} catch (err) {
+		console.error(err.message);
+		res.status(500).send('Server Error');
+	}
+};
+
 module.exports = {
 	createWorkspace,
 	getAllWorkspaces,
 	getWorkspaceById,
 	getWorkspaceMembers,
+	deleteWorkspace,
+	leaveWorkspace,
 };

@@ -7,7 +7,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const LoginForm = () => {
-	const { loginUser } = useAuth();
+	const { login } = useAuth();
 	const navigate = useNavigate();
 
 	const [formData, setFormData] = useState({
@@ -21,9 +21,8 @@ const LoginForm = () => {
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		try {
-			// formData тепер містить email, password і rememberMe
 			const data = await authService.login(formData);
-			loginUser(data.token);
+			login(data.token);
 			toast.success('Welcome back!');
 			navigate('/dashboard');
 		} catch (err) {

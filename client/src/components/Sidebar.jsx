@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 const Sidebar = ({ onOpenCreate }) => {
-	const { user, logoutUser } = useAuth();
+	const { user, logout } = useAuth();
 	const navigate = useNavigate();
 	const location = useLocation();
 

@@ -1,210 +1,394 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
-import { chatService } from '../services/chat';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+
+// Сервіси
 import { workspaceService } from '../services/workspaces';
-import { Send, Bot, User, Loader2, Settings } from 'lucide-react'; // Додали Settings
-import WorkspaceSettingsModal from '../components/WorkspaceSettingsModal'; // Імпорт модалки
+import { chatService } from '../services/chat';
+import { invitationService } from '../services/invitations';
+
+// Компоненти
+import Sidebar from '../components/Sidebar';
+import WorkspaceSettingsModal from '../components/WorkspaceSettingsModal';
+import CreateWorkspaceModal from '../components/CreateWorkspaceModal';
+import NotificationsModal from '../components/NotificationsModal';
+
+// Іконки
+import {
+	ArrowLeft,
+	Settings,
+	Trash2,
+	Send,
+	Bot,
+	User,
+	Loader2,
+	Paperclip,
+} from 'lucide-react';
+import { toast } from 'react-toastify';
 
 const WorkspaceView = () => {
 	const { id } = useParams();
+	const navigate = useNavigate();
+	const { user } = useAuth();
+
+	// --- Data States ---
 	const [workspace, setWorkspace] = useState(null);
 	const [messages, setMessages] = useState([]);
-	const [input, setInput] = useState('');
-	const [isLoading, setIsLoading] = useState(false);
+	const [loading, setLoading] = useState(true);
+	const [invitations, setInvitations] = useState([]); // Для сайдбару
 
-	// Стан для модального вікна налаштувань
-	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+	// --- Chat Input State ---
+	const [input, setInput] = useState('');
+	const [sending, setSending] = useState(false);
+
+	// --- Modal States ---
+	const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+	const [createModalOpen, setCreateModalOpen] = useState(false);
+	const [notificationsModalOpen, setNotificationsModalOpen] = useState(false);
 
 	const messagesEndRef = useRef(null);
 
-	// Завантаження даних воркспейсу та історії
+	// 1. Завантаження даних (Workspace + History + Invitations for Sidebar)
 	useEffect(() => {
-		const loadData = async () => {
+		const fetchAllData = async () => {
 			try {
-				if (!id) return;
-				const wsData = await workspaceService.getOne(id);
-				setWorkspace(wsData);
+				// Паралельне завантаження
+				const [wsData, chatHistory, inviteData] = await Promise.all([
+					workspaceService.getOne(id),
+					chatService.getHistory(id),
+					invitationService.getMyInvitations(),
+				]);
 
-				const history = await chatService.getHistory(id);
-				setMessages(history);
+				setWorkspace(wsData);
+				setMessages(chatHistory);
+				setInvitations(inviteData);
 			} catch (error) {
-				console.error('Failed to load workspace data', error);
+				console.error(error);
+				toast.error('Failed to load workspace');
+				navigate('/dashboard');
+			} finally {
+				setLoading(false);
 			}
 		};
-		loadData();
-	}, [id]);
 
-	// Автоскрол вниз
+		if (id) fetchAllData();
+	}, [id, navigate]);
+
+	// Авто-скрол до низу
 	useEffect(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
 	}, [messages]);
 
+	// --- Chat Logic ---
 	const handleSendMessage = async (e) => {
 		e.preventDefault();
-		if (!input.trim()) return;
+		if (!input.trim() || sending) return;
 
-		const userMsg = { role: 'user', content: input };
-		setMessages((prev) => [...prev, userMsg]);
+		const userMsgContent = input;
 		setInput('');
-		setIsLoading(true);
+		setSending(true);
+
+		// Оптимістичне додавання повідомлення користувача
+		const tempUserMsg = {
+			id: Date.now(),
+			role: 'user',
+			content: userMsgContent,
+			created_at: new Date().toISOString(),
+		};
+		setMessages((prev) => [...prev, tempUserMsg]);
 
 		try {
-			const response = await chatService.sendMessage(id, userMsg.content);
-			// response - це об'єкт повідомлення з бази
-			setMessages((prev) => [...prev, response]);
+			const aiResponse = await chatService.sendMessage(
+				id,
+				userMsgContent
+			);
+			setMessages((prev) => [...prev, aiResponse]);
 		} catch (error) {
-			console.error('Chat error', error);
-			setMessages((prev) => [
-				...prev,
-				{
-					role: 'assistant',
-					content: 'Error: Could not get response.',
-				},
-			]);
+			console.error(error);
+			toast.error('Failed to send message');
 		} finally {
-			setIsLoading(false);
+			setSending(false);
 		}
 	};
 
+	// --- Workspace Actions ---
+	const handleDeleteWorkspace = async () => {
+		if (!workspace) return;
+
+		const isOwner = workspace.role === 'owner';
+		const confirmMessage = isOwner
+			? `Are you sure you want to delete "${workspace.title}"?`
+			: `Are you sure you want to leave "${workspace.title}"?`;
+
+		if (!window.confirm(confirmMessage)) return;
+
+		try {
+			if (isOwner) {
+				await workspaceService.delete(id);
+				toast.success('Workspace deleted');
+			} else {
+				await workspaceService.leave(id);
+				toast.success('Left workspace');
+			}
+			navigate('/dashboard');
+		} catch (error) {
+			toast.error('Operation failed');
+		}
+	};
+
+	// --- Sidebar / Modal Logic (Copy from Dashboard) ---
+	const handleCreateSubmit = async (title) => {
+		try {
+			const newWorkspace = await workspaceService.create(title);
+			toast.success('Workspace created!');
+			setCreateModalOpen(false);
+			navigate(`/workspace/${newWorkspace.id}`);
+		} catch (error) {
+			toast.error('Failed to create workspace');
+		}
+	};
+
+	const handleRespondToInvitation = async (token, action) => {
+		try {
+			await invitationService.respond(token, action);
+			setInvitations((prev) => prev.filter((inv) => inv.token !== token));
+			if (action === 'accept') toast.success('Invitation accepted!');
+		} catch (error) {
+			toast.error('Failed to respond');
+		}
+	};
+
+	if (loading)
+		return (
+			<div className="min-h-screen bg-dark flex items-center justify-center text-light">
+				Loading...
+			</div>
+		);
+
 	return (
-		<div className="flex h-screen bg-dark text-light font-sans">
-			{/* Сайдбар */}
-			<Sidebar />
+		<div className="min-h-screen bg-dark text-light font-sans flex flex-col">
+			{/* --- HEADER --- */}
+			<header className="h-16 border-b border-gray-700 bg-dark flex items-center flex-shrink-0 z-20 fixed top-0 w-full">
+				{/* Left: Logo */}
+				<div className="w-72 flex items-center px-6 border-r border-gray-700 h-full">
+					<img
+						src="/logoCropped.svg"
+						alt="CorpMind AI"
+						className="h-12 mr-3"
+					/>
+					<span className="font-bold text-2xl tracking-wide">
+						CorpMind<span className="text-gold">AI</span>
+					</span>
+				</div>
 
-			{/* Основна область */}
-			<div className="flex-1 flex flex-col relative">
-				{/* HEADER */}
-				<header className="h-16 border-b border-gray-800 flex items-center justify-between px-6 bg-dark/95 backdrop-blur z-10">
-					<h1 className="text-lg font-semibold tracking-wide text-white">
-						{workspace ? workspace.title : 'Loading...'}
-					</h1>
-
-					{/* Кнопка налаштувань (шестерня) */}
-					{workspace && (
+				{/* Right: Workspace Controls */}
+				<div className="flex-1 flex items-center justify-between px-6 bg-dark">
+					{/* --- LEFT SIDE: Back + Title --- */}
+					<div className="flex items-center gap-4">
 						<button
-							onClick={() => setIsSettingsOpen(true)}
-							className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition duration-200"
-							title="Workspace Settings"
+							onClick={() => navigate('/dashboard')}
+							className="p-2 rounded-full text-gray-400 hover:text-light hover:bg-gray-800 transition-colors"
+							title="Back to Dashboard"
 						>
-							<Settings size={20} />
+							<ArrowLeft className="w-5 h-5" />
 						</button>
-					)}
-				</header>
 
-				{/* CHAT AREA */}
-				<div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-					{messages.length === 0 ? (
-						<div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-50">
-							<Bot size={64} className="mb-4" />
-							<p>No messages yet. Start the conversation!</p>
-						</div>
-					) : (
-						messages.map((msg, idx) => (
-							<div
-								key={idx}
-								className={`flex ${
-									msg.role === 'user'
-										? 'justify-end'
-										: 'justify-start'
-								}`}
+						<h2 className="text-lg font-bold text-light leading-none">
+							{workspace?.title}
+						</h2>
+					</div>
+
+					{/* --- RIGHT SIDE: Meta Info + Actions --- */}
+					<div className="flex items-center gap-4">
+						{/* Date */}
+						<span className="text-xs text-gray-500 hidden sm:inline-block">
+							Created{' '}
+							{new Date(
+								workspace?.created_at
+							).toLocaleDateString()}
+						</span>
+
+						{/* Role Badge */}
+						<span
+							className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider ${
+								workspace?.role === 'owner'
+									? 'bg-gold/20 text-gold'
+									: 'bg-purple/20 text-purple'
+							}`}
+						>
+							{workspace?.role === 'owner' ? 'Admin' : 'Member'}
+						</span>
+
+						{/* Vertical Divider */}
+						<div className="h-6 w-px bg-gray-700 mx-1"></div>
+
+						{/* Actions Buttons */}
+						<div className="flex items-center gap-1">
+							<button
+								onClick={() => setSettingsModalOpen(true)}
+								className="p-2 text-gray-400 hover:text-light hover:bg-gray-800 rounded-full transition-colors"
+								title="Workspace Settings"
 							>
+								<Settings className="w-5 h-5" />
+							</button>
+							<button
+								onClick={handleDeleteWorkspace}
+								className="p-2 text-gray-400 hover:text-uiError hover:bg-uiError/10 rounded-full transition-colors"
+								title={
+									workspace?.role === 'owner'
+										? 'Delete Workspace'
+										: 'Leave Workspace'
+								}
+							>
+								<Trash2 className="w-5 h-5" />
+							</button>
+						</div>
+					</div>
+				</div>
+			</header>
+
+			{/* --- MAIN LAYOUT --- */}
+			<div className="flex flex-1 pt-16 h-screen">
+				{/* Reused Sidebar */}
+				<Sidebar
+					onOpenCreate={() => setCreateModalOpen(true)}
+					onOpenNotifications={() => setNotificationsModalOpen(true)}
+					notificationCount={invitations.length}
+				/>
+
+				{/* --- CHAT AREA --- */}
+				<main className="flex-1 flex flex-col bg-[#0F1113] ml-72 relative h-[calc(100vh-64px)]">
+					{/* Messages Scroll Area */}
+					<div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+						{messages.length === 0 ? (
+							<div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-60">
+								<Bot className="w-16 h-16 mb-4" />
+								<p>
+									Start a conversation with your AI assistant.
+								</p>
+								<p className="text-sm">
+									Ask questions about your documents.
+								</p>
+							</div>
+						) : (
+							messages.map((msg) => (
 								<div
-									className={`flex max-w-[80%] md:max-w-[70%] ${
+									key={msg.id}
+									className={`flex gap-4 max-w-3xl ${
 										msg.role === 'user'
-											? 'flex-row-reverse'
-											: 'flex-row'
-									} gap-3`}
+											? 'ml-auto flex-row-reverse'
+											: ''
+									}`}
 								>
 									{/* Avatar */}
 									<div
-										className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+										className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
 											msg.role === 'user'
-												? 'bg-purple'
-												: 'bg-blue'
+												? 'bg-blue/20 text-blue'
+												: 'bg-gold/20 text-gold'
 										}`}
 									>
 										{msg.role === 'user' ? (
-											<User
-												size={16}
-												className="text-white"
-											/>
+											<User className="w-5 h-5" />
 										) : (
-											<Bot
-												size={16}
-												className="text-white"
-											/>
+											<Bot className="w-5 h-5" />
 										)}
 									</div>
 
 									{/* Bubble */}
 									<div
-										className={`p-3 rounded-2xl text-sm leading-relaxed ${
+										className={`p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
 											msg.role === 'user'
-												? 'bg-purple/20 text-white rounded-tr-none border border-purple/30'
-												: 'bg-gray-800 text-gray-100 rounded-tl-none border border-gray-700'
+												? 'bg-blue/10 text-light rounded-tr-sm border border-blue/20'
+												: 'bg-dark2 text-gray-200 rounded-tl-sm border border-gray-700'
 										}`}
 									>
-										{/* Простий рендер тексту (можна додати Markdown пізніше) */}
-										<div className="whitespace-pre-wrap">
-											{msg.content}
-										</div>
+										{msg.content}
 									</div>
 								</div>
-							</div>
-						))
-					)}
+							))
+						)}
+						{/* Invisible element to scroll to */}
+						<div ref={messagesEndRef} />
+					</div>
 
-					{/* Індикатор завантаження */}
-					{isLoading && (
-						<div className="flex justify-start">
-							<div className="flex items-center gap-3">
-								<div className="w-8 h-8 rounded-full bg-blue flex items-center justify-center">
-									<Bot size={16} className="text-white" />
-								</div>
-								<div className="bg-gray-800 p-3 rounded-2xl rounded-tl-none border border-gray-700 flex items-center">
-									<Loader2
-										size={16}
-										className="animate-spin text-gray-400"
-									/>
-								</div>
-							</div>
-						</div>
-					)}
-					<div ref={messagesEndRef} />
-				</div>
-
-				{/* INPUT AREA */}
-				<div className="p-4 border-t border-gray-800 bg-dark">
-					<form
-						onSubmit={handleSendMessage}
-						className="relative max-w-4xl mx-auto"
-					>
-						<input
-							type="text"
-							value={input}
-							onChange={(e) => setInput(e.target.value)}
-							placeholder="Ask something about your documents..."
-							className="w-full bg-[#1A1D21] text-white border border-gray-700 rounded-full py-3 pl-5 pr-12 focus:outline-none focus:border-purple transition-colors placeholder-gray-500"
-							disabled={isLoading}
-						/>
-						<button
-							type="submit"
-							disabled={isLoading || !input.trim()}
-							className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-gradient-btn rounded-full text-white hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+					{/* Input Area */}
+					<div className="p-4 bg-dark border-t border-gray-700">
+						<form
+							onSubmit={handleSendMessage}
+							className="max-w-4xl mx-auto relative flex items-center gap-3"
 						>
-							<Send size={18} />
-						</button>
-					</form>
-				</div>
+							{/* Attach Button (Placeholder for future) */}
+							{workspace?.role === 'owner' && (
+								<button
+									type="button"
+									onClick={() => setSettingsModalOpen(true)} // Shortcut to docs
+									className="p-3 text-gray-400 hover:text-light hover:bg-gray-700 rounded-full transition-colors"
+									title="Manage Documents"
+								>
+									<Paperclip className="w-5 h-5" />
+								</button>
+							)}
 
-				{/* МОДАЛЬНЕ ВІКНО НАЛАШТУВАНЬ */}
-				<WorkspaceSettingsModal
-					isOpen={isSettingsOpen}
-					onClose={() => setIsSettingsOpen(false)}
-					workspace={workspace}
-				/>
+							{/* Input Field */}
+							<input
+								type="text"
+								value={input}
+								onChange={(e) => setInput(e.target.value)}
+								placeholder="Ask a question about your documents..."
+								className="flex-1 bg-[#0F1113] text-light border border-gray-600 rounded-full py-3 px-5 focus:outline-none focus:border-blue focus:ring-1 focus:ring-blue transition-all"
+								disabled={sending}
+							/>
+
+							{/* Send Button */}
+							<button
+								type="submit"
+								disabled={!input.trim() || sending}
+								className={`p-3 rounded-full flex items-center justify-center transition-all ${
+									!input.trim() || sending
+										? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+										: 'bg-gradient-btn hover:bg-gradient-btn-hover text-light shadow-lg transform hover:scale-105'
+								}`}
+							>
+								{sending ? (
+									<Loader2 className="w-5 h-5 animate-spin" />
+								) : (
+									<Send className="w-5 h-5 ml-0.5" />
+								)}
+							</button>
+						</form>
+						<div className="text-center mt-2">
+							<p className="text-[10px] text-gray-500">
+								AI can make mistakes. Please verify important
+								information.
+							</p>
+						</div>
+					</div>
+				</main>
 			</div>
+
+			{/* --- Modals (Reused) --- */}
+			{workspace && (
+				<WorkspaceSettingsModal
+					isOpen={settingsModalOpen}
+					onClose={() => setSettingsModalOpen(false)}
+					workspaceId={workspace.id}
+					currentRole={workspace.role}
+				/>
+			)}
+
+			<CreateWorkspaceModal
+				isOpen={createModalOpen}
+				onClose={() => setCreateModalOpen(false)}
+				onSubmit={handleCreateSubmit}
+			/>
+
+			<NotificationsModal
+				isOpen={notificationsModalOpen}
+				onClose={() => setNotificationsModalOpen(false)}
+				invitations={invitations}
+				onRespond={handleRespondToInvitation}
+			/>
 		</div>
 	);
 };

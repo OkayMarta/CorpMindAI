@@ -7,13 +7,46 @@ const register = async (req, res) => {
 	try {
 		const { nickname, email, password } = req.body;
 
-		const user = await pool.query(
-			'SELECT * FROM users WHERE email = $1 OR nickname = $2',
-			[email, nickname]
-		);
-		if (user.rows.length > 0) {
-			return res.status(401).json('User already exists');
+		// --- 1. ВАЛІДАЦІЯ ВХІДНИХ ДАНИХ ---
+
+		// Валідація Email
+		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		if (!emailRegex.test(email)) {
+			return res.status(400).json('Invalid email format');
 		}
+
+		// Валідація Пароля (мін 8, 1 літера, 1 цифра, без пробілів)
+		const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[^\s]{8,}$/;
+		if (!passwordRegex.test(password)) {
+			return res
+				.status(400)
+				.json(
+					'Password must be at least 8 chars, contain a letter and a number, and no spaces.'
+				);
+		}
+
+		// --- 2. ПЕРЕВІРКА УНІКАЛЬНОСТІ ---
+
+		// Перевіряємо Email
+		const emailCheck = await pool.query(
+			'SELECT * FROM users WHERE email = $1',
+			[email]
+		);
+		if (emailCheck.rows.length > 0) {
+			// Повертаємо специфічний код/повідомлення для Email
+			return res.status(409).json('Email already registered');
+		}
+
+		// Перевіряємо Nickname
+		const nicknameCheck = await pool.query(
+			'SELECT * FROM users WHERE nickname = $1',
+			[nickname]
+		);
+		if (nicknameCheck.rows.length > 0) {
+			return res.status(409).json('Nickname is taken');
+		}
+
+		// --- 3. СТВОРЕННЯ КОРИСТУВАЧА ---
 
 		const saltRound = 10;
 		const salt = await bcrypt.genSalt(saltRound);

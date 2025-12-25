@@ -12,6 +12,7 @@ import Sidebar from '../components/Sidebar';
 import WorkspaceSettingsModal from '../components/WorkspaceSettingsModal';
 import CreateWorkspaceModal from '../components/CreateWorkspaceModal';
 import NotificationsModal from '../components/NotificationsModal';
+import ProfileSettingsModal from '../components/ProfileSettingsModal';
 
 // Іконки
 import {
@@ -35,7 +36,7 @@ const WorkspaceView = () => {
 	const [workspace, setWorkspace] = useState(null);
 	const [messages, setMessages] = useState([]);
 	const [loading, setLoading] = useState(true);
-	const [invitations, setInvitations] = useState([]); // Для сайдбару
+	const [invitations, setInvitations] = useState([]);
 
 	// --- Chat Input State ---
 	const [input, setInput] = useState('');
@@ -45,20 +46,18 @@ const WorkspaceView = () => {
 	const [settingsModalOpen, setSettingsModalOpen] = useState(false);
 	const [createModalOpen, setCreateModalOpen] = useState(false);
 	const [notificationsModalOpen, setNotificationsModalOpen] = useState(false);
+	const [profileModalOpen, setProfileModalOpen] = useState(false);
 
 	const messagesEndRef = useRef(null);
 
-	// 1. Завантаження даних (Workspace + History + Invitations for Sidebar)
 	useEffect(() => {
 		const fetchAllData = async () => {
 			try {
-				// Паралельне завантаження
 				const [wsData, chatHistory, inviteData] = await Promise.all([
 					workspaceService.getOne(id),
 					chatService.getHistory(id),
 					invitationService.getMyInvitations(),
 				]);
-
 				setWorkspace(wsData);
 				setMessages(chatHistory);
 				setInvitations(inviteData);
@@ -70,16 +69,13 @@ const WorkspaceView = () => {
 				setLoading(false);
 			}
 		};
-
 		if (id) fetchAllData();
 	}, [id, navigate]);
 
-	// Авто-скрол до низу
 	useEffect(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
 	}, [messages]);
 
-	// --- Chat Logic ---
 	const handleSendMessage = async (e) => {
 		e.preventDefault();
 		if (!input.trim() || sending) return;
@@ -88,7 +84,6 @@ const WorkspaceView = () => {
 		setInput('');
 		setSending(true);
 
-		// Оптимістичне додавання повідомлення користувача
 		const tempUserMsg = {
 			id: Date.now(),
 			role: 'user',
@@ -111,10 +106,8 @@ const WorkspaceView = () => {
 		}
 	};
 
-	// --- Workspace Actions ---
 	const handleDeleteWorkspace = async () => {
 		if (!workspace) return;
-
 		const isOwner = workspace.role === 'owner';
 		const confirmMessage = isOwner
 			? `Are you sure you want to delete "${workspace.title}"?`
@@ -136,7 +129,6 @@ const WorkspaceView = () => {
 		}
 	};
 
-	// --- Sidebar / Modal Logic (Copy from Dashboard) ---
 	const handleCreateSubmit = async (title) => {
 		try {
 			const newWorkspace = await workspaceService.create(title);
@@ -169,7 +161,6 @@ const WorkspaceView = () => {
 		<div className="min-h-screen bg-dark text-light font-sans flex flex-col">
 			{/* --- HEADER --- */}
 			<header className="h-16 border-b border-gray-700 bg-dark flex items-center flex-shrink-0 z-20 fixed top-0 w-full">
-				{/* Left: Logo */}
 				<div className="w-72 flex items-center px-6 border-r border-gray-700 h-full">
 					<img
 						src="/logoCropped.svg"
@@ -181,9 +172,7 @@ const WorkspaceView = () => {
 					</span>
 				</div>
 
-				{/* Right: Workspace Controls */}
 				<div className="flex-1 flex items-center justify-between px-6 bg-dark">
-					{/* --- LEFT SIDE: Back + Title --- */}
 					<div className="flex items-center gap-4">
 						<button
 							onClick={() => navigate('/dashboard')}
@@ -198,9 +187,7 @@ const WorkspaceView = () => {
 						</h2>
 					</div>
 
-					{/* --- RIGHT SIDE: Meta Info + Actions --- */}
 					<div className="flex items-center gap-4">
-						{/* Date */}
 						<span className="text-xs text-gray-500 hidden sm:inline-block">
 							Created{' '}
 							{new Date(
@@ -208,7 +195,6 @@ const WorkspaceView = () => {
 							).toLocaleDateString()}
 						</span>
 
-						{/* Role Badge */}
 						<span
 							className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider ${
 								workspace?.role === 'owner'
@@ -219,10 +205,8 @@ const WorkspaceView = () => {
 							{workspace?.role === 'owner' ? 'Admin' : 'Member'}
 						</span>
 
-						{/* Vertical Divider */}
 						<div className="h-6 w-px bg-gray-700 mx-1"></div>
 
-						{/* Actions Buttons */}
 						<div className="flex items-center gap-1">
 							<button
 								onClick={() => setSettingsModalOpen(true)}
@@ -249,20 +233,19 @@ const WorkspaceView = () => {
 
 			{/* --- MAIN LAYOUT --- */}
 			<div className="flex flex-1 pt-16 h-screen">
-				{/* Reused Sidebar */}
 				<Sidebar
 					onOpenCreate={() => setCreateModalOpen(true)}
 					onOpenNotifications={() => setNotificationsModalOpen(true)}
+					onOpenProfile={() => setProfileModalOpen(true)}
 					notificationCount={invitations.length}
 				/>
 
-				{/* --- CHAT AREA --- */}
-				<main className="flex-1 flex flex-col bg-[#0F1113] ml-72 relative h-[calc(100vh-64px)]">
+				<main className="flex-1 flex flex-col bg-dark ml-72 relative h-[calc(100vh-64px)]">
 					{/* Messages Scroll Area */}
 					<div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
 						{messages.length === 0 ? (
 							<div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-60">
-								<Bot className="w-16 h-16 mb-4" />
+								<Bot className="w-16 h-16 mb-4 text-blue" />
 								<p>
 									Start a conversation with your AI assistant.
 								</p>
@@ -284,7 +267,6 @@ const WorkspaceView = () => {
 										: 'bg-purple/20 text-purple';
 								}
 
-								// Бульбашка повідомлення
 								let bubbleStyle = '';
 								if (!isUser) {
 									bubbleStyle =
@@ -308,7 +290,6 @@ const WorkspaceView = () => {
 												: ''
 										}`}
 									>
-										{/* Avatar */}
 										<div
 											className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${avatarStyle}`}
 										>
@@ -318,8 +299,6 @@ const WorkspaceView = () => {
 												<Bot className="w-5 h-5" />
 											)}
 										</div>
-
-										{/* Message Bubble */}
 										<div
 											className={`p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${bubbleStyle}`}
 										>
@@ -329,7 +308,6 @@ const WorkspaceView = () => {
 								);
 							})
 						)}
-						{/* Invisible element to scroll to */}
 						<div ref={messagesEndRef} />
 					</div>
 
@@ -339,11 +317,10 @@ const WorkspaceView = () => {
 							onSubmit={handleSendMessage}
 							className="max-w-4xl mx-auto relative flex items-center gap-3"
 						>
-							{/* Attach Button (Placeholder for future) */}
 							{workspace?.role === 'owner' && (
 								<button
 									type="button"
-									onClick={() => setSettingsModalOpen(true)} // Shortcut to docs
+									onClick={() => setSettingsModalOpen(true)}
 									className="p-3 text-gray-400 hover:text-light hover:bg-gray-700 rounded-full transition-colors"
 									title="Manage Documents"
 								>
@@ -351,17 +328,15 @@ const WorkspaceView = () => {
 								</button>
 							)}
 
-							{/* Input Field */}
 							<input
 								type="text"
 								value={input}
 								onChange={(e) => setInput(e.target.value)}
 								placeholder="Ask a question about your documents..."
-								className="flex-1 bg-[#0F1113] text-light border border-gray-600 rounded-full py-3 px-5 focus:outline-none focus:border-blue focus:ring-1 focus:ring-blue transition-all"
+								className="flex-1 bg-dark text-light border border-gray-600 rounded-full py-3 px-5 focus:outline-none focus:border-blue focus:ring-1 focus:ring-blue transition-all"
 								disabled={sending}
 							/>
 
-							{/* Send Button */}
 							<button
 								type="submit"
 								disabled={!input.trim() || sending}
@@ -388,27 +363,18 @@ const WorkspaceView = () => {
 				</main>
 			</div>
 
-			{/* Модалка налаштувань */}
-			{selectedWorkspace && (
+			{/* --- Modals --- */}
+			{workspace && (
 				<WorkspaceSettingsModal
 					isOpen={settingsModalOpen}
 					onClose={() => setSettingsModalOpen(false)}
-					workspaceId={selectedWorkspace.id}
-					currentRole={selectedWorkspace.role}
-					workspaceTitle={selectedWorkspace.title}
-					onUpdate={(newTitle) => {
-						setWorkspaces((prev) =>
-							prev.map((w) =>
-								w.id === selectedWorkspace.id
-									? { ...w, title: newTitle }
-									: w
-							)
-						);
-						setSelectedWorkspace((prev) => ({
-							...prev,
-							title: newTitle,
-						}));
-					}}
+					workspaceId={workspace.id}
+					currentRole={workspace.role}
+					// --- ВИПРАВЛЕНО: Використовуємо workspace.title ---
+					workspaceTitle={workspace.title}
+					onUpdate={(newTitle) =>
+						setWorkspace((prev) => ({ ...prev, title: newTitle }))
+					}
 				/>
 			)}
 
@@ -423,6 +389,11 @@ const WorkspaceView = () => {
 				onClose={() => setNotificationsModalOpen(false)}
 				invitations={invitations}
 				onRespond={handleRespondToInvitation}
+			/>
+
+			<ProfileSettingsModal
+				isOpen={profileModalOpen}
+				onClose={() => setProfileModalOpen(false)}
 			/>
 		</div>
 	);

@@ -1,22 +1,25 @@
 const router = require('express').Router();
-const upload = require('../middlewares/uploadMiddleware');
+const createUpload = require('../middlewares/uploadMiddleware'); // Імпорт функції
 const authMiddleware = require('../middlewares/authMiddleware');
 const documentController = require('../controllers/documentController');
 
-// Всі роути захищені
+// Створюємо "документний" завантажувач
+const documentUpload = createUpload([
+	'application/pdf',
+	'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+	'text/plain',
+]);
+
 router.use(authMiddleware);
 
-// Завантаження (поле у формі має називатися "file")
+// Використовуємо documentUpload
 router.post(
 	'/upload',
-	upload.single('file'),
+	documentUpload.single('file'),
 	documentController.uploadDocument
 );
 
-// Отримати список
 router.get('/:workspaceId', documentController.getDocuments);
-
-// DELETE
 router.delete('/:id', documentController.deleteDocument);
 
 module.exports = router;

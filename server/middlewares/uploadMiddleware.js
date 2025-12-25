@@ -11,40 +11,37 @@ if (!fs.existsSync(uploadDir)) {
 // Налаштування сховища
 const storage = multer.diskStorage({
 	destination: function (req, file, cb) {
-		cb(null, 'uploads/'); // Куди класти
+		cb(null, 'uploads/');
 	},
 	filename: function (req, file, cb) {
-		// Робимо ім'я унікальним: timestamp + оригінальне ім'я
-		// ВАЖЛИВО: Декодуємо ім'я, щоб кирилиця не ламалась (Buffer.from...latin1...utf8)
+		// Декодуємо ім'я (utf8)
 		file.originalname = Buffer.from(file.originalname, 'latin1').toString(
 			'utf8'
 		);
+		// Унікальне ім'я
 		cb(null, Date.now() + '-' + file.originalname);
 	},
 });
 
-// Фільтр (приймаємо тільки документи)
-const fileFilter = (req, file, cb) => {
-	const allowedTypes = [
-		'application/pdf',
-		'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
-		'text/plain',
-	];
+const createUploadMiddleware = (allowedTypes) => {
+	const fileFilter = (req, file, cb) => {
+		if (allowedTypes.includes(file.mimetype)) {
+			cb(null, true);
+		} else {
+			cb(
+				new Error(
+					`Invalid file type. Allowed: ${allowedTypes.join(', ')}`
+				),
+				false
+			);
+		}
+	};
 
-	if (allowedTypes.includes(file.mimetype)) {
-		cb(null, true);
-	} else {
-		cb(
-			new Error('Invalid file type. Only PDF, DOCX and TXT are allowed.'),
-			false
-		);
-	}
+	return multer({
+		storage: storage,
+		fileFilter: fileFilter,
+		limits: { fileSize: 10 * 1024 * 1024 }, // 10 МБ
+	});
 };
 
-const upload = multer({
-	storage: storage,
-	fileFilter: fileFilter,
-	limits: { fileSize: 10 * 1024 * 1024 }, // Ліміт 10 МБ
-});
-
-module.exports = upload;
+module.exports = createUploadMiddleware;

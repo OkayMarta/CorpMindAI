@@ -10,6 +10,7 @@ import Sidebar from '../components/Sidebar';
 import WorkspaceSettingsModal from '../components/WorkspaceSettingsModal';
 import CreateWorkspaceModal from '../components/CreateWorkspaceModal';
 import NotificationsModal from '../components/NotificationsModal';
+import ProfileSettingsModal from '../components/ProfileSettingsModal';
 
 import { Search, MessageSquare, Trash2, Settings, Plus } from 'lucide-react';
 import { toast } from 'react-toastify';
@@ -29,6 +30,7 @@ const DashboardLayout = () => {
 	const [settingsModalOpen, setSettingsModalOpen] = useState(false);
 	const [createModalOpen, setCreateModalOpen] = useState(false);
 	const [notificationsModalOpen, setNotificationsModalOpen] = useState(false);
+	const [profileModalOpen, setProfileModalOpen] = useState(false);
 
 	const [selectedWorkspace, setSelectedWorkspace] = useState(null);
 
@@ -167,6 +169,7 @@ const DashboardLayout = () => {
 				<Sidebar
 					onOpenCreate={() => setCreateModalOpen(true)}
 					onOpenNotifications={() => setNotificationsModalOpen(true)}
+					onOpenProfile={() => setProfileModalOpen(true)}
 					notificationCount={invitations.length}
 				/>
 
@@ -348,6 +351,11 @@ const DashboardLayout = () => {
 				onClose={() => setNotificationsModalOpen(false)}
 				invitations={invitations}
 				onRespond={handleRespondToInvitation}
+			/>
+
+			<ProfileSettingsModal
+				isOpen={profileModalOpen}
+				onClose={() => setProfileModalOpen(false)}
 			/>
 		</div>
 	);

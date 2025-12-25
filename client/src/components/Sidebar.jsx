@@ -13,6 +13,7 @@ import {
 const Sidebar = ({
 	onOpenCreate,
 	onOpenNotifications,
+	onOpenProfile,
 	notificationCount = 0,
 }) => {
 	const { user, logout } = useAuth();
@@ -31,7 +32,11 @@ const Sidebar = ({
 	};
 
 	const handleProfileClick = () => {
-		toast.info('Profile settings are under development');
+		if (onOpenProfile) {
+			onOpenProfile();
+		} else {
+			console.warn('onOpenProfile prop is missing');
+		}
 	};
 
 	return (

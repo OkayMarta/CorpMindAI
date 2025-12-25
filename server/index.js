@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const app = express();
+const path = require('path');
 const PORT = process.env.PORT || 5000;
 
 // Middleware
@@ -14,6 +15,9 @@ app.use('/api/workspaces', require('./routes/workspace.routes'));
 app.use('/api/documents', require('./routes/document.routes'));
 app.use('/api/chat', require('./routes/chat.routes'));
 app.use('/api/invitations', require('./routes/invitation.routes'));
+app.use('/api/users', require('./routes/user.routes'));
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.listen(PORT, () => {
 	console.log(`Server running on port ${PORT}`);

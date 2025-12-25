@@ -44,9 +44,21 @@ export const AuthProvider = ({ children }) => {
 		setUser(null);
 	};
 
+	// --- Оновлення даних користувача без перезавантаження ---
+	const updateUser = (userData) => {
+		setUser((prev) => ({ ...prev, ...userData }));
+	};
+
 	return (
 		<AuthContext.Provider
-			value={{ user, isAuthenticated, loading, login, logout }}
+			value={{
+				user,
+				isAuthenticated,
+				loading,
+				login,
+				logout,
+				updateUser,
+			}}
 		>
 			{children}
 		</AuthContext.Provider>

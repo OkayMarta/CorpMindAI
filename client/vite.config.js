@@ -5,9 +5,13 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
 	plugins: [react()],
 	server: {
-		// Налаштовуємо проксі, щоб фронтенд бачив бекенд
 		proxy: {
 			'/api': {
+				target: 'http://localhost:5000',
+				changeOrigin: true,
+				secure: false,
+			},
+			'/uploads': {
 				target: 'http://localhost:5000',
 				changeOrigin: true,
 				secure: false,

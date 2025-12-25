@@ -4,7 +4,7 @@ const askAI = async (workspaceId, question) => {
 	try {
 		console.log(`[Chat] Question: ${question}`);
 
-		// 1. Перетворюємо питання на вектор (Embed Query)
+		// 1. Векторизація питання
 		const embedder = await getEmbedder();
 		const output = await embedder(question, {
 			pooling: 'mean',
@@ -12,43 +12,48 @@ const askAI = async (workspaceId, question) => {
 		});
 		const queryVector = Array.from(output.data);
 
-		// 2. Шукаємо в ChromaDB (Retrieval)
+		// 2. Пошук в ChromaDB
 		const collectionName = `workspace_${workspaceId}`;
 		const collection = await chromaClient.getCollection({
 			name: collectionName,
-			embeddingFunction: { generate: async () => [] }, // Заглушка
+			embeddingFunction: { generate: async () => [] },
 		});
 
 		const searchResults = await collection.query({
 			queryEmbeddings: [queryVector],
-			nResults: 5, // Беремо 5 найсхожіших шматків
+			nResults: 15,
 		});
 
-		// 3. Формуємо контекст (Context Construction)
-		// searchResults.documents[0] - це масив знайдених текстів
 		const context = searchResults.documents[0].join('\n\n---\n\n');
+		console.log(`[Chat] Context length: ${context.length} chars`);
 
-		console.log(`[Chat] Found context length: ${context.length}`);
-
-		if (!context || context.length < 10) {
-			return "I couldn't find any relevant information in your documents to answer this question.";
+		// Якщо контекст порожній або дуже малий
+		if (!context || context.length < 50) {
+			return 'Unfortunately, I did not find enough information in your documents to answer this question.';
 		}
 
-		// 4. Формуємо Промпт (Prompt Engineering)
+		// 3. Промпт (Трохи уточнимо роль)
 		const prompt = `
-        You are a helpful AI assistant for a corporate knowledge base.
-        Use the following context pieces to answer the user's question.
-        If the answer is not in the context, just say that you don't know, don't try to make up an answer.
-        Keep the answer concise and professional.
+        You are an intelligent expert assistant named "CorpMindAI".
+        Your task is to answer the user's question accurately using ONLY the provided context below.
+        
+        Context information is extracted from the user's uploaded documents (PDFs, etc).
+        
+        Instructions:
+        1. Analyze the context thoroughly. The answer might be spread across multiple sections.
+        2. If the context contains the answer, explain it clearly in Ukrainian.
+        3. Use formatting (bullet points, bold text) to make the answer readable.
+        4. If the exact answer is missing, but there is related info, summarize what is available.
+        5. If the context has absolutely no relevance to the question, politely state that you cannot find the answer in the documents.
 
         Context:
         ${context}
 
-        Question: 
+        User Question: 
         ${question}
         `;
 
-		// 5. Запитуємо Gemini (Generation)
+		// 4. Генерація
 		const result = await llmModel.generateContent(prompt);
 		const response = result.response;
 		const text = response.text();
@@ -56,7 +61,7 @@ const askAI = async (workspaceId, question) => {
 		return text;
 	} catch (err) {
 		console.error('[Chat Error]', err);
-		throw new Error('Failed to generate answer');
+		return 'Sorry, an error occurred while processing the request.';
 	}
 };
 

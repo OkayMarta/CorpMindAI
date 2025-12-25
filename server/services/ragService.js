@@ -26,7 +26,7 @@ const extractText = async (filePath, fileType) => {
 	}
 };
 
-const splitText = (text, chunkSize = 1000, overlap = 200) => {
+const splitText = (text, chunkSize = 2000, overlap = 400) => {
 	if (!text) return [];
 	const cleanText = text.replace(/\s+/g, ' ').trim();
 	const chunks = [];

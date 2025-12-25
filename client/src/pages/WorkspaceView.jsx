@@ -23,7 +23,6 @@ import {
 	Bot,
 	User,
 	Loader2,
-	Paperclip,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -317,17 +316,6 @@ const WorkspaceView = () => {
 							onSubmit={handleSendMessage}
 							className="max-w-4xl mx-auto relative flex items-center gap-3"
 						>
-							{workspace?.role === 'owner' && (
-								<button
-									type="button"
-									onClick={() => setSettingsModalOpen(true)}
-									className="p-3 text-gray-400 hover:text-light hover:bg-gray-700 rounded-full transition-colors"
-									title="Manage Documents"
-								>
-									<Paperclip className="w-5 h-5" />
-								</button>
-							)}
-
 							<input
 								type="text"
 								value={input}

@@ -148,6 +148,36 @@ const leaveWorkspace = async (req, res) => {
 	}
 };
 
+// Оновити воркспейс (Змінити назву)
+const updateWorkspace = async (req, res) => {
+	try {
+		const { id } = req.params;
+		const { title } = req.body;
+		const userId = req.user.id;
+
+		// Перевірка прав (Тільки власник)
+		const check = await pool.query(
+			'SELECT * FROM workspaces WHERE id = $1 AND owner_id = $2',
+			[id, userId]
+		);
+
+		if (check.rows.length === 0) {
+			return res.status(403).json('Not authorized');
+		}
+
+		// Оновлення
+		const updated = await pool.query(
+			'UPDATE workspaces SET title = $1 WHERE id = $2 RETURNING *',
+			[title, id]
+		);
+
+		res.json(updated.rows[0]);
+	} catch (err) {
+		console.error(err.message);
+		res.status(500).send('Server Error');
+	}
+};
+
 module.exports = {
 	createWorkspace,
 	getAllWorkspaces,
@@ -155,4 +185,5 @@ module.exports = {
 	getWorkspaceMembers,
 	deleteWorkspace,
 	leaveWorkspace,
+	updateWorkspace,
 };

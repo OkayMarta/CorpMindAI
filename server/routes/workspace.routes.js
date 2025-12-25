@@ -13,6 +13,8 @@ router.get('/:id/members', workspaceController.getWorkspaceMembers);
 router.delete('/:id', workspaceController.deleteWorkspace); // Видалити весь чат
 router.delete('/:id/leave', workspaceController.leaveWorkspace); // Вийти з чату
 
+router.put('/:id', workspaceController.updateWorkspace);
+
 router.post('/:id/invite', invitationController.createInvitation);
 
 module.exports = router;

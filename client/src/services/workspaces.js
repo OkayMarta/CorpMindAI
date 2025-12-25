@@ -25,4 +25,8 @@ export const workspaceService = {
 		const res = await api.delete(`/workspaces/${id}/leave`);
 		return res.data;
 	},
+	async update(id, title) {
+		const res = await api.put(`/workspaces/${id}`, { title });
+		return res.data;
+	},
 };

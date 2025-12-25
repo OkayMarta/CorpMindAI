@@ -8,6 +8,8 @@ import {
 	Loader2,
 	Mail,
 	MessageSquare,
+	Settings,
+	Save,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -16,19 +18,31 @@ import { documentService } from '../services/documents';
 import { workspaceService } from '../services/workspaces';
 import { invitationService } from '../services/invitations';
 
+// Додали нові пропси: workspaceTitle, onUpdate
 const WorkspaceSettingsModal = ({
 	isOpen,
 	onClose,
 	workspaceId,
 	currentRole,
+	workspaceTitle,
+	onUpdate,
 }) => {
+	const isAdmin = currentRole === 'owner';
+
 	// --- State ---
-	const [activeTab, setActiveTab] = useState('documents'); // 'documents' | 'members'
+	// Якщо адмін - відкриваємо General, якщо ні - Documents
+	const [activeTab, setActiveTab] = useState(
+		isAdmin ? 'general' : 'documents'
+	);
 	const [loading, setLoading] = useState(false);
 
 	// Data
 	const [documents, setDocuments] = useState([]);
 	const [members, setMembers] = useState([]);
+
+	// General Tab State
+	const [title, setTitle] = useState(workspaceTitle || '');
+	const [savingTitle, setSavingTitle] = useState(false);
 
 	// Upload State
 	const [uploading, setUploading] = useState(false);
@@ -38,16 +52,18 @@ const WorkspaceSettingsModal = ({
 	const [inviteEmail, setInviteEmail] = useState('');
 	const [inviting, setInviting] = useState(false);
 
-	const isAdmin = currentRole === 'owner';
-
 	// --- Effects ---
 	useEffect(() => {
 		if (isOpen && workspaceId) {
 			fetchData();
+			setTitle(workspaceTitle || '');
 		}
-	}, [isOpen, workspaceId, activeTab]);
+	}, [isOpen, workspaceId, activeTab, workspaceTitle]);
 
 	const fetchData = async () => {
+		// Завантажуємо дані тільки для відповідних вкладок
+		if (activeTab === 'general') return;
+
 		setLoading(true);
 		try {
 			if (activeTab === 'documents') {
@@ -62,6 +78,24 @@ const WorkspaceSettingsModal = ({
 			toast.error('Failed to load data');
 		} finally {
 			setLoading(false);
+		}
+	};
+
+	// --- General Handlers ---
+	const handleUpdateTitle = async (e) => {
+		e.preventDefault();
+		if (!title.trim() || title === workspaceTitle) return;
+
+		setSavingTitle(true);
+		try {
+			const updatedWs = await workspaceService.update(workspaceId, title);
+			toast.success('Workspace renamed successfully!');
+			if (onUpdate) onUpdate(updatedWs.title); // Оновлюємо батьківський компонент
+		} catch (error) {
+			console.error(error);
+			toast.error('Failed to update workspace name');
+		} finally {
+			setSavingTitle(false);
 		}
 	};
 
@@ -139,6 +173,20 @@ const WorkspaceSettingsModal = ({
 
 				{/* --- TABS --- */}
 				<div className="flex border-b border-gray-700 px-6 gap-6">
+					{/* General Tab (Admin Only) */}
+					{isAdmin && (
+						<button
+							onClick={() => setActiveTab('general')}
+							className={`py-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
+								activeTab === 'general'
+									? 'border-blue text-blue'
+									: 'border-transparent text-gray-400 hover:text-light'
+							}`}
+						>
+							<Settings className="w-4 h-4" /> General
+						</button>
+					)}
+
 					<button
 						onClick={() => setActiveTab('documents')}
 						className={`py-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
@@ -147,9 +195,9 @@ const WorkspaceSettingsModal = ({
 								: 'border-transparent text-gray-400 hover:text-light'
 						}`}
 					>
-						<FileText className="w-4 h-4" /> Documents (Knowledge
-						Base)
+						<FileText className="w-4 h-4" /> Documents
 					</button>
+
 					<button
 						onClick={() => setActiveTab('members')}
 						className={`py-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
@@ -164,6 +212,54 @@ const WorkspaceSettingsModal = ({
 
 				{/* --- CONTENT AREA --- */}
 				<div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+					{/* ===== GENERAL TAB (Admin Only) ===== */}
+					{activeTab === 'general' && isAdmin && (
+						<div className="space-y-6">
+							<form onSubmit={handleUpdateTitle}>
+								<label className="block text-gray-400 text-sm font-medium mb-2">
+									Workspace Name
+								</label>
+								<div className="flex gap-2">
+									<input
+										type="text"
+										value={title}
+										onChange={(e) =>
+											setTitle(e.target.value)
+										}
+										className="flex-1 bg-dark border border-gray-700 text-light rounded-lg px-4 py-2.5 focus:outline-none focus:border-blue transition-all"
+										placeholder="Enter workspace name..."
+									/>
+									<button
+										type="submit"
+										disabled={
+											savingTitle ||
+											!title.trim() ||
+											title === workspaceTitle
+										}
+										className={`px-6 py-2.5 rounded-lg font-medium text-light flex items-center gap-2 transition-all ${
+											savingTitle ||
+											!title.trim() ||
+											title === workspaceTitle
+												? 'bg-gray-700 cursor-not-allowed text-gray-400'
+												: 'bg-blue hover:bg-blue/90'
+										}`}
+									>
+										{savingTitle ? (
+											<Loader2 className="w-4 h-4 animate-spin" />
+										) : (
+											<Save className="w-4 h-4" />
+										)}
+										Save
+									</button>
+								</div>
+								<p className="text-xs text-gray-500 mt-2">
+									This name will be visible to all members of
+									this workspace.
+								</p>
+							</form>
+						</div>
+					)}
+
 					{/* ===== DOCUMENTS TAB ===== */}
 					{activeTab === 'documents' && (
 						<div className="space-y-6">

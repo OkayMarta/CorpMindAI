@@ -388,13 +388,27 @@ const WorkspaceView = () => {
 				</main>
 			</div>
 
-			{/* --- Modals (Reused) --- */}
-			{workspace && (
+			{/* Модалка налаштувань */}
+			{selectedWorkspace && (
 				<WorkspaceSettingsModal
 					isOpen={settingsModalOpen}
 					onClose={() => setSettingsModalOpen(false)}
-					workspaceId={workspace.id}
-					currentRole={workspace.role}
+					workspaceId={selectedWorkspace.id}
+					currentRole={selectedWorkspace.role}
+					workspaceTitle={selectedWorkspace.title}
+					onUpdate={(newTitle) => {
+						setWorkspaces((prev) =>
+							prev.map((w) =>
+								w.id === selectedWorkspace.id
+									? { ...w, title: newTitle }
+									: w
+							)
+						);
+						setSelectedWorkspace((prev) => ({
+							...prev,
+							title: newTitle,
+						}));
+					}}
 				/>
 			)}
 

@@ -1,12 +1,13 @@
 const pool = require('../config/db');
+const fs = require('fs'); // Для роботи з файлами
+const { chromaClient } = require('../config/ai'); // Для очищення векторної бази
 
 // Створити новий простір
 const createWorkspace = async (req, res) => {
 	try {
 		const { title } = req.body;
-		const ownerId = req.user.id; // З токена
+		const ownerId = req.user.id;
 
-		// 1. Створюємо запис у workspaces
 		const newWorkspace = await pool.query(
 			'INSERT INTO workspaces (title, owner_id) VALUES ($1, $2) RETURNING *',
 			[title, ownerId]
@@ -14,7 +15,6 @@ const createWorkspace = async (req, res) => {
 
 		const workspaceID = newWorkspace.rows[0].id;
 
-		// 2. Автоматично додаємо власника у workspace_members як 'owner'
 		await pool.query(
 			"INSERT INTO workspace_members (workspace_id, user_id, role) VALUES ($1, $2, 'owner')",
 			[workspaceID, ownerId]
@@ -27,7 +27,7 @@ const createWorkspace = async (req, res) => {
 	}
 };
 
-// Отримати всі простори, де я є учасником
+// Отримати всі простори
 const getAllWorkspaces = async (req, res) => {
 	try {
 		const query = `
@@ -45,7 +45,7 @@ const getAllWorkspaces = async (req, res) => {
 	}
 };
 
-// Отримати один простір (для входу в чат)
+// Отримати один простір
 const getWorkspaceById = async (req, res) => {
 	try {
 		const { id } = req.params;
@@ -70,11 +70,11 @@ const getWorkspaceById = async (req, res) => {
 	}
 };
 
+// Отримати учасників
 const getWorkspaceMembers = async (req, res) => {
 	try {
 		const { id } = req.params;
 
-		// Перевіряємо, чи має поточний юзер доступ до воркспейсу
 		const accessCheck = await pool.query(
 			'SELECT * FROM workspace_members WHERE workspace_id = $1 AND user_id = $2',
 			[id, req.user.id]
@@ -84,7 +84,6 @@ const getWorkspaceMembers = async (req, res) => {
 			return res.status(403).json('Access Denied');
 		}
 
-		// Отримуємо список учасників + дані з таблиці users
 		const query = `
             SELECT u.id, u.nickname, u.email, u.avatar_url, wm.role, wm.joined_at
             FROM workspace_members wm
@@ -101,13 +100,13 @@ const getWorkspaceMembers = async (req, res) => {
 	}
 };
 
-// Видалити воркспейс (Тільки власник)
+// --- Функція видалення ---
 const deleteWorkspace = async (req, res) => {
 	try {
 		const { id } = req.params;
 		const userId = req.user.id;
 
-		// Перевіряємо, чи юзер є власником
+		// 1. Перевірка прав
 		const check = await pool.query(
 			'SELECT * FROM workspaces WHERE id = $1 AND owner_id = $2',
 			[id, userId]
@@ -119,23 +118,51 @@ const deleteWorkspace = async (req, res) => {
 				.json('Not authorized to delete this workspace');
 		}
 
-		// Видаляємо воркспейс
+		// 2. Отримуємо список файлів, щоб видалити їх фізично
+		const filesResult = await pool.query(
+			'SELECT filepath FROM documents WHERE workspace_id = $1',
+			[id]
+		);
+
+		// 3. Видаляємо фізичні файли з папки uploads
+		filesResult.rows.forEach((doc) => {
+			if (fs.existsSync(doc.filepath)) {
+				try {
+					fs.unlinkSync(doc.filepath);
+					console.log(`Deleted file: ${doc.filepath}`);
+				} catch (e) {
+					console.error(`Failed to delete file: ${doc.filepath}`, e);
+				}
+			}
+		});
+
+		// 4. Очищаємо векторну базу (ChromaDB)
+		try {
+			const collectionName = `workspace_${id}`;
+			await chromaClient.deleteCollection({ name: collectionName });
+			console.log(`Deleted Chroma collection: ${collectionName}`);
+		} catch (e) {
+			console.warn(`Chroma collection cleanup skipped for ${id}`);
+		}
+
+		// 5. Видаляємо запис з БД (PostgreSQL)
 		await pool.query('DELETE FROM workspaces WHERE id = $1', [id]);
 
-		res.json({ message: 'Workspace deleted successfully' });
+		res.json({
+			message: 'Workspace and all associated data deleted successfully',
+		});
 	} catch (err) {
 		console.error(err.message);
 		res.status(500).send('Server Error');
 	}
 };
 
-// Покинути воркспейс (Для учасника)
+// Покинути воркспейс
 const leaveWorkspace = async (req, res) => {
 	try {
 		const { id } = req.params;
 		const userId = req.user.id;
 
-		// Видаляємо запис про членство
 		await pool.query(
 			'DELETE FROM workspace_members WHERE workspace_id = $1 AND user_id = $2',
 			[id, userId]
@@ -148,14 +175,13 @@ const leaveWorkspace = async (req, res) => {
 	}
 };
 
-// Оновити воркспейс (Змінити назву)
+// Змінити назву
 const updateWorkspace = async (req, res) => {
 	try {
 		const { id } = req.params;
 		const { title } = req.body;
 		const userId = req.user.id;
 
-		// Перевірка прав (Тільки власник)
 		const check = await pool.query(
 			'SELECT * FROM workspaces WHERE id = $1 AND owner_id = $2',
 			[id, userId]
@@ -165,7 +191,6 @@ const updateWorkspace = async (req, res) => {
 			return res.status(403).json('Not authorized');
 		}
 
-		// Оновлення
 		const updated = await pool.query(
 			'UPDATE workspaces SET title = $1 WHERE id = $2 RETURNING *',
 			[title, id]

@@ -28,3 +28,6 @@ pnpm-debug.log*
 # OS generated files (сміття операційної системи)
 .DS_Store
 Thumbs.db
+
+server/uploads/*
+!server/uploads/.gitkeep

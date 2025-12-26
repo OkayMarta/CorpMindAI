@@ -1,7 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { toast } from 'react-toastify';
 import {
 	MessageSquare,
 	PlusCircle,
@@ -9,6 +8,8 @@ import {
 	Settings,
 	LogOut,
 } from 'lucide-react';
+
+import Avatar from '../components/ui/Avatar';
 
 const Sidebar = ({
 	onOpenCreate,
@@ -22,39 +23,22 @@ const Sidebar = ({
 
 	const isActive = (path) => location.pathname === path;
 
-	const getInitials = (name) => {
-		return name ? name.substring(0, 2).toUpperCase() : 'UR';
-	};
-
 	const handleLogout = () => {
 		logout();
 		navigate('/');
 	};
 
-	const handleProfileClick = () => {
-		if (onOpenProfile) {
-			onOpenProfile();
-		} else {
-			console.warn('onOpenProfile prop is missing');
-		}
-	};
-
 	return (
 		<aside className="w-72 bg-dark border-r border-gray-700 flex flex-col fixed left-0 top-16 h-[calc(100vh-64px)] overflow-y-auto">
-			{/* PROFILE */}
+			{/* PROFILE SECTION */}
 			<div className="p-6 flex flex-col items-center border-b border-gray-800">
 				<div className="relative mb-3">
-					{user?.avatar_url ? (
-						<img
-							src={user.avatar_url}
-							alt={user.nickname}
-							className="w-20 h-20 rounded-full object-cover border-2 border-blue"
-						/>
-					) : (
-						<div className="w-20 h-20 rounded-full bg-gradient-btn flex items-center justify-center text-light text-2xl font-bold shadow-lg">
-							{getInitials(user?.nickname)}
-						</div>
-					)}
+					<Avatar
+						url={user?.avatar_url}
+						name={user?.nickname}
+						size="w-20 h-20"
+						textSize="text-2xl"
+					/>
 					<div className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 border-2 border-dark rounded-full"></div>
 				</div>
 
@@ -109,7 +93,7 @@ const Sidebar = ({
 				</button>
 
 				<button
-					onClick={handleProfileClick}
+					onClick={onOpenProfile}
 					className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-gray-800 hover:text-light transition-all duration-200"
 				>
 					<Settings className="w-5 h-5" />

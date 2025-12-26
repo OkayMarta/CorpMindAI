@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import RegisterForm from '../modules/Auth/RegisterForm';
+import RegisterForm from '../features/auth/components/RegisterForm';
 import logo from '/logoCropped.svg';
 
 const Register = () => {

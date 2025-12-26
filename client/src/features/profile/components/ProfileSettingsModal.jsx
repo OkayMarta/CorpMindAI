@@ -1,20 +1,16 @@
 import React, { useState, useRef } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { authService } from '../services/auth';
-import {
-	X,
-	User,
-	Save,
-	Loader2,
-	Camera,
-	AlertTriangle,
-	Trash2,
-} from 'lucide-react';
+import { useAuth } from '../../../context/AuthContext';
+import { authService } from '../../../services/auth';
+import { X, User, Save, Camera, AlertTriangle, Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import Button from '../../../components/ui/Button';
+import Input from '../../../components/ui/Input';
+import { handleError } from '../../../utils/errorHandler';
 
 const ProfileSettingsModal = ({ isOpen, onClose }) => {
 	const { user, updateUser, logout } = useAuth();
 
+	// State
 	const [nickname, setNickname] = useState(user?.nickname || '');
 	const [preview, setPreview] = useState(user?.avatar_url || null);
 
@@ -23,8 +19,10 @@ const ProfileSettingsModal = ({ isOpen, onClose }) => {
 
 	const [loading, setLoading] = useState(false);
 	const [activeTab, setActiveTab] = useState('general');
+
 	const fileInputRef = useRef(null);
 
+	// Оновлюємо дані при відкритті модалки
 	React.useEffect(() => {
 		if (isOpen && user) {
 			setNickname(user.nickname);
@@ -33,6 +31,8 @@ const ProfileSettingsModal = ({ isOpen, onClose }) => {
 			setRemoveAvatar(false);
 		}
 	}, [isOpen, user]);
+
+	// --- Handlers ---
 
 	const handleFileSelect = (e) => {
 		const file = e.target.files[0];
@@ -44,8 +44,8 @@ const ProfileSettingsModal = ({ isOpen, onClose }) => {
 		}
 	};
 
-	// Обробник видалення аватару (візуально)
-	const handleRemoveAvatarClick = () => {
+	const handleRemoveAvatarClick = (e) => {
+		e.stopPropagation(); // Щоб не спрацював клік на інпут
 		setPreview(null);
 		setAvatarFile(null);
 		setRemoveAvatar(true);
@@ -60,7 +60,6 @@ const ProfileSettingsModal = ({ isOpen, onClose }) => {
 			if (nickname === user.nickname && !avatarFile && !removeAvatar)
 				return;
 
-			// Передаємо removeAvatar у сервіс
 			const updatedUserData = await authService.updateProfile(
 				nickname,
 				avatarFile,
@@ -68,11 +67,9 @@ const ProfileSettingsModal = ({ isOpen, onClose }) => {
 			);
 
 			updateUser(updatedUserData);
-
 			toast.success('Profile updated successfully!');
 		} catch (error) {
-			console.error(error);
-			toast.error(error.response?.data || 'Update failed');
+			handleError(error, 'Update failed');
 		} finally {
 			setLoading(false);
 		}
@@ -90,13 +87,21 @@ const ProfileSettingsModal = ({ isOpen, onClose }) => {
 			toast.success('Account deleted.');
 			logout();
 		} catch (error) {
-			console.error(error);
-			toast.error('Failed to delete account');
-			setLoading(false);
+			handleError(error, 'Failed to delete account');
 		}
 	};
 
 	if (!isOpen) return null;
+
+	// Допоміжна функція для класів вкладок
+	const getTabClass = (name) => {
+		const isActive = activeTab === name;
+		return `py-4 text-sm font-medium border-b-2 transition-colors ${
+			isActive
+				? 'border-blue text-blue'
+				: 'border-transparent text-gray-400 hover:text-light'
+		}`;
+	};
 
 	return (
 		<div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -119,11 +124,7 @@ const ProfileSettingsModal = ({ isOpen, onClose }) => {
 				<div className="flex border-b border-gray-700 px-6 gap-6">
 					<button
 						onClick={() => setActiveTab('general')}
-						className={`py-4 text-sm font-medium border-b-2 transition-colors ${
-							activeTab === 'general'
-								? 'border-blue text-blue'
-								: 'border-transparent text-gray-400 hover:text-light'
-						}`}
+						className={getTabClass('general')}
 					>
 						General
 					</button>
@@ -141,15 +142,14 @@ const ProfileSettingsModal = ({ isOpen, onClose }) => {
 
 				{/* Content */}
 				<div className="p-6">
-					{/* --- GENERAL TAB --- */}
+					{/* ===== GENERAL TAB ===== */}
 					{activeTab === 'general' && (
 						<form onSubmit={handleUpdate} className="space-y-6">
-							{/* Avatar Section */}
+							{/* Avatar Upload Section */}
 							<div className="flex flex-col items-center gap-4">
 								<div className="relative group">
-									{/* Саме зображення або градієнт */}
 									<div
-										className="cursor-pointer"
+										className="cursor-pointer relative"
 										onClick={() =>
 											fileInputRef.current.click()
 										}
@@ -168,18 +168,18 @@ const ProfileSettingsModal = ({ isOpen, onClose }) => {
 											</div>
 										)}
 
-										{/* Іконка камери при наведенні */}
+										{/* Overlay icon */}
 										<div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
 											<Camera className="w-8 h-8 text-light drop-shadow-md" />
 										</div>
 									</div>
 
-									{/* Кнопка видалення (з'являється, якщо є прев'ю) */}
+									{/* Delete Button (if avatar exists) */}
 									{preview && (
 										<button
 											type="button"
 											onClick={handleRemoveAvatarClick}
-											className="absolute -right-2 top-0 bg-gray-800 hover:bg-uiError text-light p-1.5 rounded-full border border-gray-600 transition-colors shadow-sm"
+											className="absolute -right-2 top-0 bg-gray-800 hover:bg-uiError text-light p-1.5 rounded-full border border-gray-600 transition-colors shadow-sm z-10"
 											title="Remove Avatar"
 										>
 											<Trash2 className="w-4 h-4" />
@@ -188,6 +188,7 @@ const ProfileSettingsModal = ({ isOpen, onClose }) => {
 								</div>
 
 								<input
+									variant="dark"
 									type="file"
 									ref={fileInputRef}
 									onChange={handleFileSelect}
@@ -204,50 +205,32 @@ const ProfileSettingsModal = ({ isOpen, onClose }) => {
 							</div>
 
 							{/* Nickname Input */}
-							<div>
-								<label className="block text-gray-400 text-sm font-medium mb-2">
-									Nickname
-								</label>
-								<input
-									type="text"
-									value={nickname}
-									onChange={(e) =>
-										setNickname(e.target.value)
-									}
-									className="w-full bg-dark border border-gray-700 text-light rounded-lg px-4 py-3 focus:outline-none focus:border-blue transition-all"
-									placeholder="Enter new nickname"
-								/>
-							</div>
+							<Input
+								variant="dark"
+								label="Nickname"
+								value={nickname}
+								onChange={(e) => setNickname(e.target.value)}
+								placeholder="Enter new nickname"
+							/>
 
 							{/* Save Button */}
-							<button
+							<Button
 								type="submit"
+								isLoading={loading}
 								disabled={
-									loading ||
-									(nickname === user?.nickname &&
-										!avatarFile &&
-										!removeAvatar)
+									nickname === user?.nickname &&
+									!avatarFile &&
+									!removeAvatar
 								}
-								className={`w-full py-3 rounded-lg font-bold text-light flex items-center justify-center gap-2 transition-all ${
-									loading ||
-									(nickname === user?.nickname &&
-										!avatarFile &&
-										!removeAvatar)
-										? 'bg-gray-700 cursor-not-allowed text-gray-400'
-										: 'bg-gradient-btn hover:bg-gradient-btn-hover shadow-lg'
-								}`}
+								className="w-full py-3"
 							>
-								{loading ? (
-									<Loader2 className="w-5 h-5 animate-spin" />
-								) : (
-									<Save className="w-5 h-5" />
-								)}
+								<Save className="w-5 h-5" />
 								Save Changes
-							</button>
+							</Button>
 						</form>
 					)}
 
-					{/* --- DANGER ZONE TAB --- */}
+					{/* ===== DANGER ZONE TAB ===== */}
 					{activeTab === 'danger' && (
 						<div className="text-center space-y-6 py-4">
 							<div className="bg-uiError/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto text-uiError">
@@ -263,18 +246,17 @@ const ProfileSettingsModal = ({ isOpen, onClose }) => {
 									permanently deleted.
 								</p>
 							</div>
-							<button
+
+							{/* Delete Button */}
+							<Button
+								variant="danger"
 								onClick={handleDeleteAccount}
-								disabled={loading}
-								className="w-full bg-transparent border border-uiError text-uiError hover:bg-uiError hover:text-light py-3 rounded-lg font-bold transition-all flex items-center justify-center gap-2"
+								isLoading={loading}
+								className="w-full py-3"
 							>
-								{loading ? (
-									<Loader2 className="w-5 h-5 animate-spin" />
-								) : (
-									<Trash2 className="w-5 h-5" />
-								)}
+								<Trash2 className="w-5 h-5" />
 								Delete My Account
-							</button>
+							</Button>
 						</div>
 					)}
 				</div>

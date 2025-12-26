@@ -1,145 +1,67 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Outlet, useNavigate } from 'react-router-dom';
+import Sidebar from './Sidebar';
+import { Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-// Сервіси
+
+// Імпортуємо модалки, які глобальні для лейауту
+import CreateWorkspaceModal from '../features/workspace/components/CreateWorkspaceModal';
+import NotificationsModal from '../features/invitations/components/NotificationsModal';
+import ProfileSettingsModal from '../features/profile/components/ProfileSettingsModal';
+
+// Сервіси для глобальних дій (створення, запрошення)
 import { workspaceService } from '../services/workspaces';
 import { invitationService } from '../services/invitations';
-
-// Компоненти
-import Sidebar from '../components/Sidebar';
-import WorkspaceSettingsModal from '../components/WorkspaceSettingsModal';
-import CreateWorkspaceModal from '../components/CreateWorkspaceModal';
-import NotificationsModal from '../components/NotificationsModal';
-import ProfileSettingsModal from '../components/ProfileSettingsModal';
-
-import { Search, MessageSquare, Trash2, Settings, Plus } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 const DashboardLayout = () => {
-	const { user } = useAuth();
 	const navigate = useNavigate();
 
-	// --- СТАНИ ДАНИХ ---
-	const [workspaces, setWorkspaces] = useState([]);
-	const [invitations, setInvitations] = useState([]);
-	const [loading, setLoading] = useState(true);
-	const [searchQuery, setSearchQuery] = useState('');
-	const [filter, setFilter] = useState('all');
-
-	// --- СТАНИ МОДАЛОК ---
-	const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+	// Стан модалок
 	const [createModalOpen, setCreateModalOpen] = useState(false);
 	const [notificationsModalOpen, setNotificationsModalOpen] = useState(false);
 	const [profileModalOpen, setProfileModalOpen] = useState(false);
 
-	const [selectedWorkspace, setSelectedWorkspace] = useState(null);
+	// Стан запрошень (для бейджика в сайдбарі)
+	const [invitations, setInvitations] = React.useState([]);
 
-	// Завантаження початкових даних
-	useEffect(() => {
-		const fetchData = async () => {
+	React.useEffect(() => {
+		const fetchInvites = async () => {
 			try {
-				// Запускаємо обидва запити паралельно для швидкості
-				const [wsData, inviteData] = await Promise.all([
-					workspaceService.getAll(),
-					invitationService.getMyInvitations(),
-				]);
-
-				setWorkspaces(wsData);
-				setInvitations(inviteData);
-			} catch (error) {
-				console.error(error);
-			} finally {
-				setLoading(false);
+				const data = await invitationService.getMyInvitations();
+				setInvitations(data);
+			} catch (e) {
+				console.error(e);
 			}
 		};
-
-		fetchData();
+		fetchInvites();
 	}, []);
 
-	// --- ЛОГІКА ЗАПРОШЕНЬ ---
+	// Хендлери
+	const handleCreateSubmit = async (title) => {
+		try {
+			const newWorkspace = await workspaceService.create(title);
+			toast.success('Workspace created!');
+			setCreateModalOpen(false);
+			navigate(`/workspace/${newWorkspace.id}`);
+		} catch (error) {
+			toast.error('Failed to create workspace');
+		}
+	};
+
 	const handleRespondToInvitation = async (token, action) => {
 		try {
-			const response = await invitationService.respond(token, action);
-
-			// Видаляємо оброблене запрошення зі списку
+			await invitationService.respond(token, action);
 			setInvitations((prev) => prev.filter((inv) => inv.token !== token));
-
-			if (action === 'accept') {
-				toast.success('Invitation accepted!');
-				// Якщо прийняли - оновлюємо список чатів, щоб новий чат з'явився
-				const updatedWorkspaces = await workspaceService.getAll();
-				setWorkspaces(updatedWorkspaces);
-			} else {
-				toast.info('Invitation declined');
-			}
+			if (action === 'accept') toast.success('Invitation accepted!');
 		} catch (error) {
-			console.error(error);
 			toast.error('Failed to respond');
 		}
 	};
 
-	// --- ЛОГІКА ВОРКСПЕЙСІВ ---
-	const handleDeleteWorkspace = async (e, workspace) => {
-		e.stopPropagation();
-		const isOwner = workspace.role === 'owner';
-		const confirmMessage = isOwner
-			? `Are you sure you want to delete "${workspace.title}"? This cannot be undone.`
-			: `Are you sure you want to leave "${workspace.title}"?`;
-
-		if (!window.confirm(confirmMessage)) return;
-
-		try {
-			if (isOwner) {
-				await workspaceService.delete(workspace.id);
-				toast.success('Workspace deleted successfully');
-			} else {
-				await workspaceService.leave(workspace.id);
-				toast.success('You have left the workspace');
-			}
-			setWorkspaces((prev) => prev.filter((w) => w.id !== workspace.id));
-		} catch (error) {
-			console.error(error);
-			const errorMsg = error.response?.data || 'Operation failed';
-			toast.error(errorMsg);
-		}
-	};
-
-	const handleOpenSettings = (e, workspace) => {
-		e.stopPropagation();
-		setSelectedWorkspace(workspace);
-		setSettingsModalOpen(true);
-	};
-
-	const handleCreateSubmit = async (title) => {
-		try {
-			const newWorkspace = await workspaceService.create(title);
-			const newWorkspaceWithRole = { ...newWorkspace, role: 'owner' };
-			setWorkspaces([newWorkspaceWithRole, ...workspaces]);
-			setCreateModalOpen(false);
-			toast.success('Workspace created!');
-			navigate(`/workspace/${newWorkspace.id}`);
-		} catch (error) {
-			console.error(error);
-			toast.error('Failed to create workspace');
-			throw error;
-		}
-	};
-
-	const filteredWorkspaces = workspaces.filter((w) => {
-		const matchesSearch = w.title
-			.toLowerCase()
-			.includes(searchQuery.toLowerCase());
-		let matchesFilter = true;
-		if (filter === 'owner') {
-			matchesFilter = w.role === 'owner';
-		} else if (filter === 'member') {
-			matchesFilter = w.role === 'member';
-		}
-		return matchesSearch && matchesFilter;
-	});
-
 	return (
 		<div className="min-h-screen bg-dark text-light font-sans flex flex-col">
+			{/* Header */}
 			<header className="h-16 border-b border-gray-700 bg-dark flex items-center flex-shrink-0 z-20 fixed top-0 w-full">
 				<div className="w-72 flex items-center px-6 border-r border-gray-700 h-full">
 					<img
@@ -156,10 +78,8 @@ const DashboardLayout = () => {
 						<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
 						<input
 							type="text"
-							placeholder="Search workspaces..."
+							placeholder="Search (global)..."
 							className="w-full bg-dark2 border border-gray-700 text-light rounded-full py-2 pl-10 pr-4 focus:outline-none focus:border-blue transition-colors"
-							value={searchQuery}
-							onChange={(e) => setSearchQuery(e.target.value)}
 						/>
 					</div>
 				</div>
@@ -173,186 +93,24 @@ const DashboardLayout = () => {
 					notificationCount={invitations.length}
 				/>
 
-				<main className="flex-1 overflow-y-auto p-8 bg-[#0F1113] ml-72">
-					{loading ? (
-						<div className="flex justify-center items-center h-full text-gray-400">
-							Loading...
-						</div>
-					) : workspaces.length === 0 ? (
-						<div className="flex flex-col items-center justify-center h-full text-center">
-							<div className="bg-gray-800 p-6 rounded-full mb-6">
-								<MessageSquare className="w-12 h-12 text-blue" />
-							</div>
-							<h2 className="text-2xl font-bold mb-2">
-								Welcome to CorpMind AI!
-							</h2>
-							<p className="text-gray-400 mb-8 max-w-md">
-								It looks like you don't have any workspaces yet.
-							</p>
-							<button
-								onClick={() => setCreateModalOpen(true)}
-								className="bg-gradient-btn hover:bg-gradient-btn-hover text-light font-semibold py-3 px-8 rounded-lg transition-all shadow-lg transform hover:scale-105 flex items-center gap-2"
-							>
-								<Plus className="w-5 h-5" /> Create New
-								Workspace
-							</button>
-						</div>
-					) : (
-						<div className="max-w-5xl mx-auto">
-							<div className="flex items-center justify-between mb-6 select-none">
-								<div className="flex items-center text-l gap-3">
-									<button
-										onClick={() => setFilter('all')}
-										className={`transition-colors duration-200 ${
-											filter === 'all'
-												? 'text-light font-medium'
-												: 'text-gray-500 hover:text-gray-300 font-light'
-										}`}
-									>
-										All
-									</button>
-									<span className="text-gray-600 font-thin text-xl pb-1">
-										|
-									</span>
-									<button
-										onClick={() => setFilter('owner')}
-										className={`transition-colors duration-200 ${
-											filter === 'owner'
-												? 'text-light font-medium'
-												: 'text-gray-500 hover:text-gray-300 font-light'
-										}`}
-									>
-										Admin
-									</button>
-									<span className="text-gray-600 font-thin text-xl pb-1">
-										|
-									</span>
-									<button
-										onClick={() => setFilter('member')}
-										className={`transition-colors duration-200 ${
-											filter === 'member'
-												? 'text-light font-medium'
-												: 'text-gray-500 hover:text-gray-300 font-light'
-										}`}
-									>
-										Member
-									</button>
-								</div>
-								<div className="text-gray-500 text-sm font-medium">
-									Total:{' '}
-									<span className="text-gray ml-1">
-										{filteredWorkspaces.length}
-									</span>
-								</div>
-							</div>
-
-							<div className="space-y-3">
-								{filteredWorkspaces.map((workspace) => (
-									<div
-										key={workspace.id}
-										onClick={() =>
-											navigate(
-												`/workspace/${workspace.id}`
-											)
-										}
-										className="group bg-dark2 border border-gray-800 hover:border-blue rounded-lg px-4 py-3 flex items-center cursor-pointer transition-all duration-200"
-									>
-										<div className="w-10 h-10 rounded bg-gray-800 flex flex-shrink-0 items-center justify-center text-blue group-hover:bg-blue group-hover:text-light transition-colors mr-4">
-											<MessageSquare className="w-5 h-5" />
-										</div>
-										<div className="flex-1 flex items-center justify-between overflow-hidden">
-											<h3 className="font-semibold text-lg text-light group-hover:text-blue transition-colors truncate mr-4">
-												{workspace.title}
-											</h3>
-											<div className="flex items-center gap-6 flex-shrink-0">
-												<span className="text-sm text-gray-500">
-													{new Date(
-														workspace.created_at
-													).toLocaleDateString()}
-												</span>
-												<span
-													className={`text-xs px-2 py-0.5 rounded uppercase font-bold tracking-wider w-20 text-center ${
-														workspace.role ===
-														'owner'
-															? 'bg-gold/20 text-gold'
-															: 'bg-purple/20 text-purple'
-													}`}
-												>
-													{workspace.role === 'owner'
-														? 'Admin'
-														: 'Member'}
-												</span>
-												<div className="flex items-center gap-2 w-16 justify-end">
-													<button
-														onClick={(e) =>
-															handleOpenSettings(
-																e,
-																workspace
-															)
-														}
-														className="p-1.5 text-gray-400 hover:text-light hover:bg-gray-700 rounded-full transition-colors opacity-0 group-hover:opacity-100"
-														title="Settings"
-													>
-														<Settings className="w-5 h-5" />
-													</button>
-													<button
-														onClick={(e) =>
-															handleDeleteWorkspace(
-																e,
-																workspace
-															)
-														}
-														className="p-1.5 text-gray-400 hover:text-uiError hover:bg-uiError/10 rounded-full transition-colors opacity-0 group-hover:opacity-100"
-														title={
-															workspace.role ===
-															'owner'
-																? 'Delete Workspace'
-																: 'Leave Workspace'
-														}
-													>
-														<Trash2 className="w-5 h-5" />
-													</button>
-												</div>
-											</div>
-										</div>
-									</div>
-								))}
-								{filteredWorkspaces.length === 0 &&
-									workspaces.length > 0 && (
-										<div className="text-center text-gray-500 mt-10">
-											No workspaces found in this
-											category.
-										</div>
-									)}
-							</div>
-						</div>
-					)}
+				{/* ТУТ ВІДОБРАЖАЮТЬСЯ СТОРІНКИ (Dashboard.jsx або Workspace.jsx) */}
+				<main className="flex-1 overflow-y-auto bg-dark ml-72">
+					<Outlet />
 				</main>
 			</div>
 
-			{/* --- Модалки --- */}
-			{selectedWorkspace && (
-				<WorkspaceSettingsModal
-					isOpen={settingsModalOpen}
-					onClose={() => setSettingsModalOpen(false)}
-					workspaceId={selectedWorkspace.id}
-					currentRole={selectedWorkspace.role}
-				/>
-			)}
-
+			{/* Global Modals */}
 			<CreateWorkspaceModal
 				isOpen={createModalOpen}
 				onClose={() => setCreateModalOpen(false)}
 				onSubmit={handleCreateSubmit}
 			/>
-
 			<NotificationsModal
 				isOpen={notificationsModalOpen}
 				onClose={() => setNotificationsModalOpen(false)}
 				invitations={invitations}
 				onRespond={handleRespondToInvitation}
 			/>
-
 			<ProfileSettingsModal
 				isOpen={profileModalOpen}
 				onClose={() => setProfileModalOpen(false)}

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import LoginForm from '../modules/Auth/LoginForm';
+import LoginForm from '../features/auth/components/LoginForm';
 import logo from '/logoCropped.svg';
 
 const Login = () => {

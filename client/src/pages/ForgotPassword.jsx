@@ -4,27 +4,32 @@ import { authService } from '../services/auth';
 import { toast } from 'react-toastify';
 import logo from '/logoCropped.svg';
 
+// UI
+import Input from '../components/ui/Input';
+import Button from '../components/ui/Button';
+
 const ForgotPassword = () => {
 	const navigate = useNavigate();
 	const [email, setEmail] = useState('');
+	const [loading, setLoading] = useState(false);
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
+		setLoading(true);
 		try {
 			await authService.forgotPassword(email);
 			toast.success('Check your email for the reset link!');
 		} catch (err) {
 			toast.error(err.response?.data || 'Error sending email');
+		} finally {
+			setLoading(false);
 		}
 	};
 
 	return (
 		<div className="h-screen bg-dark font-sans overflow-hidden flex flex-col">
-			{/* Фіксований відступ зверху, як на Login/Register */}
 			<div className="flex-grow w-full pt-6 md:pt-10">
-				{/* Головний контейнер сітки */}
 				<div className="w-full max-w-[1600px] mx-auto px-6 md:px-10 flex flex-col md:flex-row justify-between items-start gap-8">
-					{/* 1. ЛІВА ЧАСТИНА: Логотип */}
 					<div className="w-full md:w-auto md:flex-1 flex justify-center md:justify-start">
 						<div
 							onClick={() => navigate('/')}
@@ -38,7 +43,6 @@ const ForgotPassword = () => {
 						</div>
 					</div>
 
-					{/* 2. ЦЕНТРАЛЬНА ЧАСТИНА: Картка */}
 					<main className="w-full md:w-auto flex justify-center z-10">
 						<div className="bg-light p-10 md:p-12 rounded shadow-2xl w-full max-w-[550px] text-center">
 							<h2 className="text-2xl font-bold text-dark mb-4">
@@ -49,26 +53,26 @@ const ForgotPassword = () => {
 								reset your password.
 							</p>
 
-							<form onSubmit={handleSubmit} className="space-y-6">
-								<div className="relative border border-uiDisabled/30 rounded px-4 py-3 focus-within:border-blue transition-colors text-left">
-									<label className="block text-[10px] font-bold text-uiDisabled uppercase tracking-wider mb-1">
-										Email Address
-									</label>
-									<input
-										type="email"
-										value={email}
-										onChange={(e) =>
-											setEmail(e.target.value)
-										}
-										placeholder="johndoe@example.com"
-										className="w-full outline-none text-dark font-medium placeholder-uiDisabled/50 bg-transparent"
-										required
-									/>
-								</div>
+							<form
+								onSubmit={handleSubmit}
+								className="space-y-6 text-left"
+							>
+								<Input
+									label="EMAIL ADDRESS"
+									type="email"
+									placeholder="johndoe@example.com"
+									value={email}
+									onChange={(e) => setEmail(e.target.value)}
+									required
+								/>
 
-								<button className="w-full py-3.5 rounded text-light font-bold uppercase tracking-wider bg-gradient-btn hover:bg-gradient-btn-hover transition-all shadow-lg transform hover:scale-[1.02]">
+								<Button
+									type="submit"
+									isLoading={loading}
+									className="w-full py-4 text-lg uppercase tracking-wider"
+								>
 									Send Reset Link
-								</button>
+								</Button>
 							</form>
 
 							<button
@@ -79,13 +83,9 @@ const ForgotPassword = () => {
 							</button>
 						</div>
 					</main>
-
-					{/* 3. ПРАВА ЧАСТИНА: Порожній блок для балансу */}
 					<div className="w-full md:w-auto md:flex-1"></div>
 				</div>
 			</div>
-
-			{/* Footer */}
 			<footer className="w-full text-center text-light text-xs py-4 md:py-6 bg-dark z-20">
 				&copy; 2025 All Rights Reserved. CorpMindAI
 			</footer>

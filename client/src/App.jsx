@@ -8,14 +8,19 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+// Layouts
+import DashboardLayout from './layouts/DashboardLayout';
+
+// Pages
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import DashboardLayout from './pages/DashboardLayout';
-import WorkspaceView from './pages/WorkspaceView';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import Dashboard from './pages/Dashboard';
+import Workspace from './pages/Workspace';
 
+// Private Route Wrapper
 const PrivateRoute = ({ children }) => {
 	const { isAuthenticated, loading } = useAuth();
 	if (loading) return null;
@@ -34,6 +39,7 @@ function App() {
 			<Router>
 				<ToastContainer theme="dark" position="top-right" />
 				<Routes>
+					{/* Public Routes */}
 					<Route
 						path="/"
 						element={
@@ -42,7 +48,6 @@ function App() {
 							</PublicRoute>
 						}
 					/>
-
 					<Route
 						path="/login"
 						element={
@@ -59,25 +64,6 @@ function App() {
 							</PublicRoute>
 						}
 					/>
-
-					<Route
-						path="/dashboard"
-						element={
-							<PrivateRoute>
-								<DashboardLayout />
-							</PrivateRoute>
-						}
-					/>
-
-					<Route
-						path="/workspace/:id"
-						element={
-							<PrivateRoute>
-								<WorkspaceView />
-							</PrivateRoute>
-						}
-					/>
-
 					<Route
 						path="/forgot-password"
 						element={
@@ -86,7 +72,6 @@ function App() {
 							</PublicRoute>
 						}
 					/>
-
 					<Route
 						path="/reset-password/:token"
 						element={
@@ -95,6 +80,18 @@ function App() {
 							</PublicRoute>
 						}
 					/>
+
+					{/* Private Routes (Wrapped in DashboardLayout) */}
+					<Route
+						element={
+							<PrivateRoute>
+								<DashboardLayout />
+							</PrivateRoute>
+						}
+					>
+						<Route path="/dashboard" element={<Dashboard />} />
+						<Route path="/workspace/:id" element={<Workspace />} />
+					</Route>
 				</Routes>
 			</Router>
 		</AuthProvider>

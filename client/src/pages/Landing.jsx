@@ -11,7 +11,7 @@ const Landing = () => {
 				<div className="cursor-pointer">
 					<img
 						src={logo}
-						alt="CorpMind AI"
+						alt="CorpMindAI"
 						className="w-24 md:w-32 h-auto"
 					/>
 				</div>

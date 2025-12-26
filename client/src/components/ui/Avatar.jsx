@@ -1,5 +1,3 @@
-import React from 'react';
-
 const Avatar = ({ url, name, size = 'w-10 h-10', textSize = 'text-sm' }) => {
 	if (url) {
 		return (

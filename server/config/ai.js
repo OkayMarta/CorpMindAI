@@ -3,7 +3,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 require('dotenv').config();
 
 // 1. Chroma
-const chromaClient = new ChromaClient({ path: 'http://localhost:8000' });
+const chromaClient = new ChromaClient(); // за замовчуванням підключається до http://localhost:8000
 
 // 2. Google Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);

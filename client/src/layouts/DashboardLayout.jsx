@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { Search } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
 
 // Імпортуємо модалки, які глобальні для лейауту
 import CreateWorkspaceModal from '../features/workspace/components/CreateWorkspaceModal';

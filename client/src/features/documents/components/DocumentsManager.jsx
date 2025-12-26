@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { documentService } from '../../../services/documents';
 import { toast } from 'react-toastify';
 import FileItem from './FileItem';

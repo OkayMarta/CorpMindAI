@@ -1,6 +1,6 @@
 const pool = require('../config/db');
 const bcrypt = require('bcrypt');
-const crypto = require('crypto'); // Вбудована бібліотека Node.js
+const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 
 const sendEmail = async (email, link) => {

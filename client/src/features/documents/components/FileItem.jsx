@@ -1,4 +1,3 @@
-import React from 'react';
 import { FileText, File, Trash2 } from 'lucide-react';
 
 const FileItem = ({ file, onDelete, canDelete }) => {

@@ -1,4 +1,3 @@
-import React from 'react';
 import { X, Check, XCircle, Bell } from 'lucide-react';
 
 // UI Components

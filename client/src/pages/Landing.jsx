@@ -5,7 +5,7 @@ const Landing = () => {
 	const navigate = useNavigate();
 
 	return (
-		<div className="h-screen bg-dark text-white relative flex flex-col overflow-hidden font-sans">
+		<div className="h-screen bg-dark text-light relative flex flex-col overflow-hidden font-sans">
 			{/* HEADER: Логотип */}
 			<header className="w-full max-w-[1600px] mx-auto px-6 md:px-10 pt-6 md:pt-10 flex justify-between items-center z-20">
 				<div className="cursor-pointer">
@@ -33,7 +33,7 @@ const Landing = () => {
 				{/* Gradient Button */}
 				<button
 					onClick={() => navigate('/login')}
-					className="px-10 py-3 rounded-[4px] text-base md:text-lg font-semibold text-white uppercase tracking-wider bg-gradient-btn hover:bg-gradient-btn-hover transform hover:scale-105 transition duration-300 ease-in-out shadow-lg"
+					className="px-10 py-3 rounded-[4px] text-base md:text-lg font-semibold text-light uppercase tracking-wider bg-gradient-btn hover:bg-gradient-btn-hover transform hover:scale-105 transition duration-300 ease-in-out shadow-lg"
 				>
 					Get Started
 				</button>

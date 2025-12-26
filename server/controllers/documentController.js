@@ -4,25 +4,28 @@ const { chromaClient } = require('../config/ai');
 const fs = require('fs');
 
 const uploadDocument = async (req, res) => {
+	// Оголошуємо змінну тут, щоб мати доступ до ID документа в catch блоці
+	let newDocId = null;
+
 	try {
 		const { workspaceId } = req.body;
 		const file = req.file;
 
 		if (!file) return res.status(400).send('No file uploaded');
 
-		// 1. Перевірка прав: чи юзер є власником/адміном цього workspace?
+		// 1. Перевірка прав
 		const check = await pool.query(
 			"SELECT * FROM workspace_members WHERE workspace_id = $1 AND user_id = $2 AND role IN ('owner', 'admin')",
 			[workspaceId, req.user.id]
 		);
 
 		if (check.rows.length === 0) {
-			fs.unlinkSync(file.path); // Видаляємо файл, бо права нема
+			fs.unlinkSync(file.path);
 			return res.status(403).send('Not authorized to upload here');
 		}
 
 		// 2. Зберігаємо запис в PostgreSQL
-		const newDoc = await pool.query(
+		const insertResult = await pool.query(
 			'INSERT INTO documents (workspace_id, filename, filepath, file_type, size) VALUES ($1, $2, $3, $4, $5) RETURNING *',
 			[
 				workspaceId,
@@ -33,20 +36,38 @@ const uploadDocument = async (req, res) => {
 			]
 		);
 
-		// 3. Запускаємо RAG Pipeline (це може зайняти час)
-		// Ми використовуємо await, щоб клієнт бачив спінер, поки файл обробляється
-		await processDocument(
-			file.path,
-			file.mimetype,
-			workspaceId,
-			newDoc.rows[0].id
-		);
+		const newDoc = insertResult.rows[0];
+		newDocId = newDoc.id; // Запам'ятовуємо ID
 
-		res.json(newDoc.rows[0]);
+		// 3. Запускаємо RAG Pipeline
+		try {
+			await processDocument(
+				file.path,
+				file.mimetype,
+				workspaceId,
+				newDoc.id
+			);
+		} catch (ragError) {
+			console.error(
+				'[RAG Error] Processing failed, rolling back DB entry:',
+				ragError
+			);
+
+			// Якщо RAG впав, видаляємо запис з БД, який ми щойно створили
+			await pool.query('DELETE FROM documents WHERE id = $1', [newDocId]);
+
+			// Прокидаємо помилку далі, щоб головний catch видалив фізичний файл
+			throw ragError;
+		}
+
+		res.json(newDoc);
 	} catch (err) {
 		console.error(err);
-		// Якщо помилка - видаляємо файл, щоб не засмічувати
-		if (req.file) fs.unlinkSync(req.file.path);
+		// Якщо помилка - видаляємо файл з диску
+		if (req.file && fs.existsSync(req.file.path)) {
+			fs.unlinkSync(req.file.path);
+		}
+
 		res.status(500).send('Upload failed: ' + err.message);
 	}
 };

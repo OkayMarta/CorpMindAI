@@ -66,7 +66,7 @@ const DocumentsManager = ({ workspaceId, userRole }) => {
 		<div className="space-y-6">
 			{/* 3. Приховуємо зону завантаження, якщо не адмін */}
 			{isAdmin && (
-				<div className="border-2 border-dashed border-gray-700 rounded-xl p-8 text-center hover:border-purple transition-colors bg-[#1A1D21]">
+				<div className="border-2 border-dashed border-gray-700 rounded-xl p-8 text-center hover:border-purple transition-colors bg-dark2">
 					{isUploading ? (
 						<div className="flex flex-col items-center text-purple">
 							<Loader2 className="animate-spin mb-2" size={32} />
@@ -88,7 +88,7 @@ const DocumentsManager = ({ workspaceId, userRole }) => {
 								<div className="bg-gray-800 p-4 rounded-full text-gray-300">
 									<Upload size={24} />
 								</div>
-								<p className="text-white font-medium">
+								<p className="text-light font-medium">
 									Click to upload documents
 								</p>
 								<p className="text-xs text-gray-500">
@@ -118,7 +118,7 @@ const DocumentsManager = ({ workspaceId, userRole }) => {
 					documents.map((doc) => (
 						<div
 							key={doc.id}
-							className="flex items-center justify-between bg-[#1A1D21] p-4 rounded-lg border border-gray-800 hover:border-gray-600 transition-colors"
+							className="flex items-center justify-between bg-dark2 p-4 rounded-lg border border-gray-800 hover:border-gray-600 transition-colors"
 						>
 							<div className="flex items-center gap-4 overflow-hidden">
 								<div className="p-2 bg-blue/10 text-blue rounded">
@@ -129,7 +129,7 @@ const DocumentsManager = ({ workspaceId, userRole }) => {
 									)}
 								</div>
 								<div className="min-w-0">
-									<p className="text-white text-sm font-medium truncate">
+									<p className="text-light text-sm font-medium truncate">
 										{doc.filename}
 									</p>
 									<p className="text-xs text-gray-500">

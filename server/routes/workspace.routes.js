@@ -14,6 +14,7 @@ router.delete('/:id', workspaceController.deleteWorkspace); // Видалити 
 router.delete('/:id/leave', workspaceController.leaveWorkspace); // Вийти з чату
 
 router.put('/:id', workspaceController.updateWorkspace);
+router.delete('/:id/members/:userId', workspaceController.removeMember);
 
 router.post('/:id/invite', invitationController.createInvitation);
 

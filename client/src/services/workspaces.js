@@ -29,4 +29,10 @@ export const workspaceService = {
 		const res = await api.put(`/workspaces/${id}`, { title });
 		return res.data;
 	},
+	async removeMember(workspaceId, userId) {
+		const res = await api.delete(
+			`/workspaces/${workspaceId}/members/${userId}`
+		);
+		return res.data;
+	},
 };

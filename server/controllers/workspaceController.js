@@ -203,6 +203,40 @@ const updateWorkspace = async (req, res) => {
 	}
 };
 
+// Видалити учасника (тільки для Owner)
+const removeMember = async (req, res) => {
+	try {
+		const { id, userId } = req.params; // id = workspaceId, userId = id юзера, якого видаляємо
+		const ownerId = req.user.id;
+
+		// 1. Перевірка: чи запитувач є власником воркспейсу
+		const ownerCheck = await pool.query(
+			"SELECT * FROM workspace_members WHERE workspace_id = $1 AND user_id = $2 AND role = 'owner'",
+			[id, ownerId]
+		);
+
+		if (ownerCheck.rows.length === 0) {
+			return res.status(403).json('Only owner can remove members');
+		}
+
+		// 2. Перевірка: не можна видалити самого себе або іншого власника через цей метод
+		if (userId === ownerId.toString()) {
+			return res.status(400).json('Cannot remove yourself here');
+		}
+
+		// 3. Видалення
+		await pool.query(
+			'DELETE FROM workspace_members WHERE workspace_id = $1 AND user_id = $2',
+			[id, userId]
+		);
+
+		res.json({ message: 'Member removed successfully' });
+	} catch (err) {
+		console.error(err.message);
+		res.status(500).send('Server Error');
+	}
+};
+
 module.exports = {
 	createWorkspace,
 	getAllWorkspaces,
@@ -211,4 +245,5 @@ module.exports = {
 	deleteWorkspace,
 	leaveWorkspace,
 	updateWorkspace,
+	removeMember,
 };

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { X, FileText, Users, Settings, Save, Mail } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, FileText, Users, Settings, Save, Mail, Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 // Services
@@ -11,6 +11,7 @@ import DocumentsManager from '../../documents/components/DocumentsManager';
 import Avatar from '../../../components/ui/Avatar';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
+import ConfirmationModal from '../../../components/ui/ConfirmationModal';
 
 // Utils
 import { handleError } from '../../../utils/errorHandler';
@@ -39,6 +40,10 @@ const WorkspaceSettingsModal = ({
 	// Invite State
 	const [inviteEmail, setInviteEmail] = useState('');
 	const [inviting, setInviting] = useState(false);
+
+	// Remove Member State
+	const [memberToRemove, setMemberToRemove] = useState(null);
+	const [isRemovingMember, setIsRemovingMember] = useState(false);
 
 	useEffect(() => {
 		if (isOpen) {
@@ -89,6 +94,28 @@ const WorkspaceSettingsModal = ({
 		}
 	};
 
+	const onRemoveClick = (member) => {
+		setMemberToRemove(member);
+	};
+
+	const handleConfirmRemoveMember = async () => {
+		if (!memberToRemove) return;
+		setIsRemovingMember(true);
+		try {
+			await workspaceService.removeMember(workspaceId, memberToRemove.id);
+			// Оновлюємо список локально
+			setMembers((prev) =>
+				prev.filter((m) => m.id !== memberToRemove.id)
+			);
+			toast.success(`${memberToRemove.nickname} removed`);
+			setMemberToRemove(null);
+		} catch (error) {
+			handleError(error, 'Failed to remove member');
+		} finally {
+			setIsRemovingMember(false);
+		}
+	};
+
 	if (!isOpen) return null;
 
 	// Допоміжна функція для класів вкладок
@@ -102,176 +129,215 @@ const WorkspaceSettingsModal = ({
 	};
 
 	return (
-		<div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-			<div className="bg-dark2 border border-gray-700 rounded-xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh] h-auto">
-				{/* --- Header --- */}
-				<div className="flex justify-between items-center p-4 md:p-6 border-b border-gray-700 flex-shrink-0">
-					<h2 className="text-lg md:text-xl font-bold text-light flex items-center gap-2">
-						<Settings className="w-5 h-5 text-blue" />
-						Settings
-					</h2>
-					<button
-						onClick={onClose}
-						className="text-gray-400 hover:text-light transition"
-					>
-						<X className="w-6 h-6" />
-					</button>
-				</div>
-
-				{/* --- Tabs --- */}
-				<div className="flex border-b border-gray-700 px-4 md:px-6 gap-4 md:gap-6 overflow-x-auto no-scrollbar">
-					{isAdmin && (
+		<>
+			<div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+				<div className="bg-dark2 border border-gray-700 rounded-xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh] h-auto">
+					{/* --- Header --- */}
+					<div className="flex justify-between items-center p-4 md:p-6 border-b border-gray-700 flex-shrink-0">
+						<h2 className="text-lg md:text-xl font-bold text-light flex items-center gap-2">
+							<Settings className="w-5 h-5 text-blue" />
+							Settings
+						</h2>
 						<button
-							onClick={() => setActiveTab('general')}
-							className={getTabClass('general')}
+							onClick={onClose}
+							className="text-gray-400 hover:text-light transition"
 						>
-							<Settings className="w-4 h-4" /> General
+							<X className="w-6 h-6" />
 						</button>
-					)}
-					<button
-						onClick={() => setActiveTab('documents')}
-						className={getTabClass('documents')}
-					>
-						<FileText className="w-4 h-4" /> Documents
-					</button>
-					<button
-						onClick={() => setActiveTab('members')}
-						className={getTabClass('members')}
-					>
-						<Users className="w-4 h-4" /> Members
-					</button>
-				</div>
+					</div>
 
-				{/* --- Content --- */}
-				<div className="p-4 md:p-6 overflow-y-auto custom-scrollbar flex-1">
-					{/* GENERAL TAB */}
-					{activeTab === 'general' && isAdmin && (
-						<form
-							onSubmit={handleUpdateTitle}
-							className="flex flex-col gap-4"
+					{/* --- Tabs --- */}
+					<div className="flex border-b border-gray-700 px-4 md:px-6 gap-4 md:gap-6 overflow-x-auto no-scrollbar">
+						{isAdmin && (
+							<button
+								onClick={() => setActiveTab('general')}
+								className={getTabClass('general')}
+							>
+								<Settings className="w-4 h-4" /> General
+							</button>
+						)}
+						<button
+							onClick={() => setActiveTab('documents')}
+							className={getTabClass('documents')}
 						>
-							<div className="flex flex-col md:flex-row md:items-end gap-3 md:gap-2">
-								<div className="flex-1">
-									<Input
-										variant="dark"
-										label="Workspace Name"
-										value={title}
-										onChange={(e) =>
-											setTitle(e.target.value)
-										}
-									/>
-								</div>
-								<Button
-									type="submit"
-									disabled={
-										savingTitle ||
-										!title.trim() ||
-										title === workspaceTitle
-									}
-									isLoading={savingTitle}
-									className="mb-[1px] w-full md:w-auto"
-								>
-									<Save className="w-4 h-4" />
-									Save
-								</Button>
-							</div>
-						</form>
-					)}
+							<FileText className="w-4 h-4" /> Documents
+						</button>
+						<button
+							onClick={() => setActiveTab('members')}
+							className={getTabClass('members')}
+						>
+							<Users className="w-4 h-4" /> Members
+						</button>
+					</div>
 
-					{/* DOCUMENTS TAB */}
-					{activeTab === 'documents' && (
-						<DocumentsManager
-							workspaceId={workspaceId}
-							userRole={currentRole}
-						/>
-					)}
-
-					{/* MEMBERS TAB */}
-					{activeTab === 'members' && (
-						<div className="space-y-6">
-							{/* Invite Form */}
-							{isAdmin && (
-								<form
-									onSubmit={handleInvite}
-									className="flex flex-col md:flex-row md:items-end gap-3 md:gap-2"
-								>
+					{/* --- Content --- */}
+					<div className="p-4 md:p-6 overflow-y-auto custom-scrollbar flex-1">
+						{/* GENERAL TAB */}
+						{activeTab === 'general' && isAdmin && (
+							<form
+								onSubmit={handleUpdateTitle}
+								className="flex flex-col gap-4"
+							>
+								<div className="flex flex-col md:flex-row md:items-end gap-3 md:gap-2">
 									<div className="flex-1">
 										<Input
 											variant="dark"
-											icon={Mail}
-											placeholder="Invite by email..."
-											value={inviteEmail}
+											label="Workspace Name"
+											value={title}
 											onChange={(e) =>
-												setInviteEmail(e.target.value)
+												setTitle(e.target.value)
 											}
 										/>
 									</div>
 									<Button
 										type="submit"
-										disabled={inviting || !inviteEmail}
-										isLoading={inviting}
+										disabled={
+											savingTitle ||
+											!title.trim() ||
+											title === workspaceTitle
+										}
+										isLoading={savingTitle}
 										className="mb-[1px] w-full md:w-auto"
 									>
-										Invite
+										<Save className="w-4 h-4" />
+										Save
 									</Button>
-								</form>
-							)}
+								</div>
+							</form>
+						)}
 
-							{/* Members List */}
-							<div>
-								<h3 className="text-xs font-bold text-gray-500 uppercase mb-3 tracking-wider">
-									Team Members
-								</h3>
-								{loadingMembers ? (
-									<p className="text-center text-gray-500 py-4">
-										Loading...
-									</p>
-								) : (
-									<div className="space-y-2">
-										{members.map((m) => (
-											<div
-												key={m.id}
-												className="flex justify-between items-center bg-dark p-3 rounded-lg border border-gray-800"
-											>
-												<div className="flex items-center gap-3 overflow-hidden">
-													<div className="flex-shrink-0">
-														<Avatar
-															url={m.avatar_url}
-															name={m.nickname}
-														/>
+						{/* DOCUMENTS TAB */}
+						{activeTab === 'documents' && (
+							<DocumentsManager
+								workspaceId={workspaceId}
+								userRole={currentRole}
+							/>
+						)}
+
+						{/* MEMBERS TAB */}
+						{activeTab === 'members' && (
+							<div className="space-y-6">
+								{/* Invite Form */}
+								{isAdmin && (
+									<form
+										onSubmit={handleInvite}
+										className="flex flex-col md:flex-row md:items-end gap-3 md:gap-2"
+									>
+										<div className="flex-1">
+											<Input
+												variant="dark"
+												icon={Mail}
+												placeholder="Invite by email..."
+												value={inviteEmail}
+												onChange={(e) =>
+													setInviteEmail(
+														e.target.value
+													)
+												}
+											/>
+										</div>
+										<Button
+											type="submit"
+											disabled={inviting || !inviteEmail}
+											isLoading={inviting}
+											className="mb-[1px] w-full md:w-auto"
+										>
+											Invite
+										</Button>
+									</form>
+								)}
+
+								{/* Members List */}
+								<div>
+									<h3 className="text-xs font-bold text-gray-500 uppercase mb-3 tracking-wider">
+										Team Members
+									</h3>
+									{loadingMembers ? (
+										<p className="text-center text-gray-500 py-4">
+											Loading...
+										</p>
+									) : (
+										<div className="space-y-2">
+											{members.map((m) => (
+												<div
+													key={m.id}
+													className="flex justify-between items-center bg-dark p-3 rounded-lg border border-gray-800 group"
+												>
+													<div className="flex items-center gap-3 overflow-hidden flex-1">
+														<div className="flex-shrink-0">
+															<Avatar
+																url={
+																	m.avatar_url
+																}
+																name={
+																	m.nickname
+																}
+															/>
+														</div>
+														<div className="min-w-0">
+															<p className="text-light text-sm font-medium truncate">
+																{m.nickname}
+															</p>
+															<p className="text-xs text-gray-500 truncate">
+																{m.email}
+															</p>
+														</div>
 													</div>
 
-													<div className="min-w-0">
-														<p className="text-light text-sm font-medium truncate">
-															{m.nickname}
-														</p>
-														<p className="text-xs text-gray-500 truncate">
-															{m.email}
-														</p>
+													<div className="flex items-center gap-2 ml-2">
+														<span
+															className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider flex-shrink-0 ${
+																m.role ===
+																'owner'
+																	? 'bg-gold/20 text-gold'
+																	: 'bg-purple/20 text-purple'
+															}`}
+														>
+															{m.role === 'owner'
+																? 'Admin'
+																: 'Member'}
+														</span>
+
+														{/* Кнопка видалення */}
+														{isAdmin &&
+															m.role !==
+																'owner' && (
+																<button
+																	onClick={() =>
+																		onRemoveClick(
+																			m
+																		)
+																	}
+																	className="p-1.5 text-gray-500 hover:text-uiError hover:bg-uiError/10 rounded-full transition-colors flex-shrink-0"
+																	title="Remove member"
+																>
+																	<Trash2 className="w-4 h-4" />
+																</button>
+															)}
 													</div>
 												</div>
-
-												<span
-													className={`text-[10px] px-2 py-0.5 ml-2 rounded uppercase font-bold tracking-wider flex-shrink-0 ${
-														m.role === 'owner'
-															? 'bg-gold/20 text-gold'
-															: 'bg-purple/20 text-purple'
-													}`}
-												>
-													{m.role === 'owner'
-														? 'Admin'
-														: 'Member'}
-												</span>
-											</div>
-										))}
-									</div>
-								)}
+											))}
+										</div>
+									)}
+								</div>
 							</div>
-						</div>
-					)}
+						)}
+					</div>
 				</div>
 			</div>
-		</div>
+
+			{/* Modal for Removing Member */}
+			<ConfirmationModal
+				isOpen={!!memberToRemove}
+				onClose={() => setMemberToRemove(null)}
+				onConfirm={handleConfirmRemoveMember}
+				isLoading={isRemovingMember}
+				title="Remove Member"
+				message={`Are you sure you want to remove "${memberToRemove?.nickname}" from this workspace? They will lose access to all documents and chats.`}
+				confirmText="Remove"
+				isDangerous={true}
+			/>
+		</>
 	);
 };
 

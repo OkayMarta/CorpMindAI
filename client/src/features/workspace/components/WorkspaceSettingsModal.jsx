@@ -94,7 +94,7 @@ const WorkspaceSettingsModal = ({
 	// Допоміжна функція для класів вкладок
 	const getTabClass = (name) => {
 		const isActive = activeTab === name;
-		return `py-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
+		return `py-4 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap flex-shrink-0 ${
 			isActive
 				? 'border-blue text-blue'
 				: 'border-transparent text-gray-400 hover:text-light'
@@ -103,10 +103,10 @@ const WorkspaceSettingsModal = ({
 
 	return (
 		<div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-			<div className="bg-dark2 border border-gray-700 rounded-xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[85vh]">
+			<div className="bg-dark2 border border-gray-700 rounded-xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh] h-auto">
 				{/* --- Header --- */}
-				<div className="flex justify-between items-center p-6 border-b border-gray-700">
-					<h2 className="text-xl font-bold text-light flex items-center gap-2">
+				<div className="flex justify-between items-center p-4 md:p-6 border-b border-gray-700 flex-shrink-0">
+					<h2 className="text-lg md:text-xl font-bold text-light flex items-center gap-2">
 						<Settings className="w-5 h-5 text-blue" />
 						Settings
 					</h2>
@@ -119,7 +119,7 @@ const WorkspaceSettingsModal = ({
 				</div>
 
 				{/* --- Tabs --- */}
-				<div className="flex border-b border-gray-700 px-6 gap-6">
+				<div className="flex border-b border-gray-700 px-4 md:px-6 gap-4 md:gap-6 overflow-x-auto no-scrollbar">
 					{isAdmin && (
 						<button
 							onClick={() => setActiveTab('general')}
@@ -143,16 +143,15 @@ const WorkspaceSettingsModal = ({
 				</div>
 
 				{/* --- Content --- */}
-				<div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+				<div className="p-4 md:p-6 overflow-y-auto custom-scrollbar flex-1">
 					{/* GENERAL TAB */}
 					{activeTab === 'general' && isAdmin && (
 						<form
 							onSubmit={handleUpdateTitle}
 							className="flex flex-col gap-4"
 						>
-							<div className="flex items-end gap-2">
+							<div className="flex flex-col md:flex-row md:items-end gap-3 md:gap-2">
 								<div className="flex-1">
-									{/* Використовуємо Input */}
 									<Input
 										variant="dark"
 										label="Workspace Name"
@@ -162,7 +161,6 @@ const WorkspaceSettingsModal = ({
 										}
 									/>
 								</div>
-								{/* Використовуємо Button */}
 								<Button
 									type="submit"
 									disabled={
@@ -171,7 +169,7 @@ const WorkspaceSettingsModal = ({
 										title === workspaceTitle
 									}
 									isLoading={savingTitle}
-									className="mb-[1px]" // Вирівнювання по висоті з інпутом
+									className="mb-[1px] w-full md:w-auto"
 								>
 									<Save className="w-4 h-4" />
 									Save
@@ -195,7 +193,7 @@ const WorkspaceSettingsModal = ({
 							{isAdmin && (
 								<form
 									onSubmit={handleInvite}
-									className="flex items-end gap-2"
+									className="flex flex-col md:flex-row md:items-end gap-3 md:gap-2"
 								>
 									<div className="flex-1">
 										<Input
@@ -208,12 +206,11 @@ const WorkspaceSettingsModal = ({
 											}
 										/>
 									</div>
-									{/* Використовуємо Button */}
 									<Button
 										type="submit"
 										disabled={inviting || !inviteEmail}
 										isLoading={inviting}
-										className="mb-[1px]"
+										className="mb-[1px] w-full md:w-auto"
 									>
 										Invite
 									</Button>
@@ -236,23 +233,26 @@ const WorkspaceSettingsModal = ({
 												key={m.id}
 												className="flex justify-between items-center bg-dark p-3 rounded-lg border border-gray-800"
 											>
-												<div className="flex items-center gap-3">
-													{/* Використовуємо Avatar */}
-													<Avatar
-														url={m.avatar_url}
-														name={m.nickname}
-													/>
-													<div>
-														<p className="text-light text-sm font-medium">
+												<div className="flex items-center gap-3 overflow-hidden">
+													<div className="flex-shrink-0">
+														<Avatar
+															url={m.avatar_url}
+															name={m.nickname}
+														/>
+													</div>
+
+													<div className="min-w-0">
+														<p className="text-light text-sm font-medium truncate">
 															{m.nickname}
 														</p>
-														<p className="text-xs text-gray-500">
+														<p className="text-xs text-gray-500 truncate">
 															{m.email}
 														</p>
 													</div>
 												</div>
+
 												<span
-													className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider ${
+													className={`text-[10px] px-2 py-0.5 ml-2 rounded uppercase font-bold tracking-wider flex-shrink-0 ${
 														m.role === 'owner'
 															? 'bg-gold/20 text-gold'
 															: 'bg-purple/20 text-purple'

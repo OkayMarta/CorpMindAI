@@ -22,9 +22,9 @@ const NotificationsModal = ({ isOpen, onClose, invitations, onRespond }) => {
 		<div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
 			<div className="bg-dark2 border border-gray-700 rounded-xl w-full max-w-md shadow-2xl transform transition-all flex flex-col max-h-[85vh]">
 				{/* Header */}
-				<div className="flex justify-between items-center p-6 border-b border-gray-700 flex-shrink-0">
+				<div className="flex justify-between items-center p-4 md:p-6 border-b border-gray-700 flex-shrink-0">
 					<div className="flex items-center gap-3">
-						<h2 className="text-xl font-bold text-light">
+						<h2 className="text-lg md:text-xl font-bold text-light">
 							Notifications
 						</h2>
 						{invitations.length > 0 && (
@@ -42,7 +42,7 @@ const NotificationsModal = ({ isOpen, onClose, invitations, onRespond }) => {
 				</div>
 
 				{/* Content */}
-				<div className="p-6 overflow-y-auto custom-scrollbar">
+				<div className="p-4 md:p-6 overflow-y-auto custom-scrollbar">
 					{invitations.length === 0 ? (
 						<div className="text-center py-8">
 							<div className="bg-dark border border-gray-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-500">
@@ -65,11 +65,13 @@ const NotificationsModal = ({ isOpen, onClose, invitations, onRespond }) => {
 									{/* Info Row */}
 									<div className="flex items-start gap-4 mb-4">
 										{/* Avatar */}
-										<Avatar
-											url={invite.sender_avatar}
-											name={invite.sender_nickname}
-											size="w-12 h-12"
-										/>
+										<div className="flex-shrink-0">
+											<Avatar
+												url={invite.sender_avatar}
+												name={invite.sender_nickname}
+												size="w-12 h-12"
+											/>
+										</div>
 
 										<div className="flex-1 min-w-0 pt-0.5">
 											<p className="text-sm text-gray-300 leading-snug">
@@ -78,7 +80,7 @@ const NotificationsModal = ({ isOpen, onClose, invitations, onRespond }) => {
 												</span>{' '}
 												invited you to join:
 											</p>
-											<p className="font-bold text-light text-lg truncate mt-1">
+											<p className="font-bold text-light text-base md:text-lg truncate mt-1">
 												{invite.workspace_title}
 											</p>
 											<p className="text-xs text-gray-500 mt-1">
@@ -97,9 +99,12 @@ const NotificationsModal = ({ isOpen, onClose, invitations, onRespond }) => {
 													'accept'
 												)
 											}
-											className="flex-1 bg-green-600 hover:bg-green-700 border-none shadow-none" // Перевизначаємо колір на зелений
+											className="flex-1 bg-green-600 hover:bg-green-700 border-none shadow-none justify-center"
 										>
-											<Check className="w-4 h-4" /> Accept
+											<Check className="w-5 h-5" />
+											<span className="hidden sm:inline ml-1">
+												Accept
+											</span>
 										</Button>
 
 										<Button
@@ -110,10 +115,12 @@ const NotificationsModal = ({ isOpen, onClose, invitations, onRespond }) => {
 													'decline'
 												)
 											}
-											className="flex-1"
+											className="flex-1 justify-center"
 										>
-											<XCircle className="w-4 h-4" />{' '}
-											Decline
+											<XCircle className="w-5 h-5" />{' '}
+											<span className="hidden sm:inline ml-1">
+												Decline
+											</span>
 										</Button>
 									</div>
 								</div>

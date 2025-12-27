@@ -19,6 +19,7 @@ const DashboardLayout = () => {
 	const location = useLocation();
 	const isWorkspacePage = location.pathname.includes('/workspace/');
 
+	// State for UI
 	const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 	const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
@@ -30,6 +31,7 @@ const DashboardLayout = () => {
 	const [invitations, setInvitations] = React.useState([]);
 	const [searchQuery, setSearchQuery] = useState('');
 
+	// Закриваємо мобільні меню при зміні роуту
 	useEffect(() => {
 		setIsSidebarOpen(false);
 		setIsMobileSearchOpen(false);
@@ -98,6 +100,7 @@ const DashboardLayout = () => {
 					<>
 						{/* LEFT: Logo (Desktop) / Burger (Mobile/Tablet) */}
 						<div className="flex items-center h-full px-4 lg:px-0 lg:w-72 lg:border-r border-gray-700 lg:bg-dark">
+							{/* Burger */}
 							<button
 								onClick={() => setIsSidebarOpen(!isSidebarOpen)}
 								className="lg:hidden text-gray-400 mr-4 p-1"
@@ -151,14 +154,17 @@ const DashboardLayout = () => {
 									</div>
 
 									{/* Mobile/Tablet Search Icon */}
-									<button
-										onClick={() =>
-											setIsMobileSearchOpen(true)
-										}
-										className="lg:hidden text-gray-400 p-2"
-									>
-										<Search className="w-6 h-6" />
-									</button>
+									{/* Показуємо ТІЛЬКИ якщо сайдбар закритий */}
+									{!isSidebarOpen && (
+										<button
+											onClick={() =>
+												setIsMobileSearchOpen(true)
+											}
+											className="lg:hidden text-gray-400 p-2"
+										>
+											<Search className="w-6 h-6" />
+										</button>
+									)}
 								</>
 							)}
 						</div>
@@ -183,7 +189,6 @@ const DashboardLayout = () => {
 					z-40 lg:z-auto 
 					h-[calc(100vh-64px)] 
 					transition-transform duration-300 ease-in-out
-					/* ЗМІНА: md: -> lg: */
 					${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
 				`}
 				>

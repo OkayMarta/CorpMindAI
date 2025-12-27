@@ -1,3 +1,4 @@
+import React from 'react';
 import { Loader2 } from 'lucide-react';
 
 const Button = ({
@@ -16,7 +17,7 @@ const Button = ({
 	// Варіанти стилізації
 	const variants = {
 		primary:
-			'bg-gradient-btn hover:bg-gradient-btn-hover text-light shadow-lg hover:shadow-blue/20 border border-transparent',
+			'bg-gradient-btn hover:bg-gradient-btn-hover text-light shadow-lg hover:shadow-blue/20',
 		secondary:
 			'bg-transparent border border-gray-600 text-gray-300 hover:text-light hover:border-gray-400 hover:bg-gray-800',
 		danger: 'bg-transparent border border-uiError text-uiError hover:bg-uiError hover:text-light',

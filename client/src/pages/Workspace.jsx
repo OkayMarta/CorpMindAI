@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { workspaceService } from '../services/workspaces';
 import { chatService } from '../services/chat';
 import { toast } from 'react-toastify';
 import { ArrowLeft, Settings, Trash2 } from 'lucide-react';
 
-// Нові компоненти
+// Components
 import ChatWindow from '../features/chat/components/ChatWindow';
 import ChatInput from '../features/chat/components/ChatInput';
 import WorkspaceSettingsModal from '../features/workspace/components/WorkspaceSettingsModal';
@@ -42,7 +42,6 @@ const Workspace = () => {
 
 	const handleSendMessage = async (content) => {
 		setSending(true);
-		// Оптимістичне оновлення UI
 		const tempMsg = {
 			id: Date.now(),
 			role: 'user',
@@ -62,9 +61,12 @@ const Workspace = () => {
 	};
 
 	const handleDelete = async () => {
-		if (!window.confirm('Are you sure?')) return;
+		const isOwner = workspace.role === 'owner';
+		const text = isOwner ? 'Delete Workspace?' : 'Leave Workspace?';
+		if (!window.confirm(text)) return;
+
 		try {
-			if (workspace.role === 'owner') await workspaceService.delete(id);
+			if (isOwner) await workspaceService.delete(id);
 			else await workspaceService.leave(id);
 			navigate('/dashboard');
 		} catch (e) {
@@ -78,38 +80,62 @@ const Workspace = () => {
 		);
 
 	return (
-		<div className="flex flex-col h-[calc(100vh-64px)] relative">
-			{/* Workspace Header (Local) */}
-			<div className="flex items-center justify-between px-6 py-4 border-b border-gray-700 bg-dark/50 backdrop-blur-sm absolute top-0 w-full z-10">
+		<div className="flex flex-col h-full relative">
+			{/* HEADER */}
+			<div className="fixed top-0 left-72 right-0 h-16 flex items-center justify-between px-6 border-b border-gray-700 bg-dark z-30">
+				{/* LEFT: Back + Title */}
 				<div className="flex items-center gap-4">
 					<button
 						onClick={() => navigate('/dashboard')}
-						className="p-2 text-gray-400 hover:text-light transition"
+						className="p-2 text-gray-400 hover:text-light hover:bg-gray-800 rounded-full transition-colors"
+						title="Back to Dashboard"
 					>
 						<ArrowLeft className="w-5 h-5" />
 					</button>
-					<h2 className="text-lg font-bold text-light">
+
+					{/* Назва чату */}
+					<h2 className="text-xl font-bold text-light truncate max-w-md tracking-tight">
 						{workspace?.title}
 					</h2>
 				</div>
-				<div className="flex items-center gap-2">
-					<button
-						onClick={() => setSettingsOpen(true)}
-						className="p-2 text-gray-400 hover:text-light transition"
+
+				<div className="flex items-center gap-4">
+					{/* Role Badge */}
+					<span
+						className={`mr-10 text-xs px-3 py-1 rounded uppercase font-bold tracking-wider shadow-sm ${
+							workspace?.role === 'owner'
+								? 'bg-gold/20 text-gold'
+								: 'bg-purple/20 text-purple'
+						}`}
 					>
-						<Settings className="w-5 h-5" />
-					</button>
-					<button
-						onClick={handleDelete}
-						className="p-2 text-gray-400 hover:text-uiError transition"
-					>
-						<Trash2 className="w-5 h-5" />
-					</button>
+						{workspace?.role === 'owner' ? 'Admin' : 'Member'}
+					</span>
+
+					<div className="flex items-center gap-1">
+						<button
+							onClick={() => setSettingsOpen(true)}
+							className="p-2 text-gray-400 hover:text-light hover:bg-gray-800 rounded-full transition-colors"
+							title="Workspace Settings"
+						>
+							<Settings className="w-5 h-5" />
+						</button>
+
+						<button
+							onClick={handleDelete}
+							className="p-2 text-gray-400 hover:text-uiError hover:bg-uiError/10 rounded-full transition-colors"
+							title={
+								workspace?.role === 'owner'
+									? 'Delete Workspace'
+									: 'Leave Workspace'
+							}
+						>
+							<Trash2 className="w-5 h-5" />
+						</button>
+					</div>
 				</div>
 			</div>
 
-			{/* Chat Area */}
-			<div className="flex-1 flex flex-col pt-16">
+			<div className="flex-1 flex flex-col pt-0 h-[calc(100vh-64px)]">
 				<ChatWindow
 					messages={messages}
 					workspaceRole={workspace?.role}
@@ -117,7 +143,6 @@ const Workspace = () => {
 				<ChatInput onSend={handleSendMessage} disabled={sending} />
 			</div>
 
-			{/* Settings Modal */}
 			{workspace && (
 				<WorkspaceSettingsModal
 					isOpen={settingsOpen}

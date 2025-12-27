@@ -4,7 +4,6 @@ const { chromaClient } = require('../config/ai');
 const fs = require('fs');
 
 const uploadDocument = async (req, res) => {
-	// Оголошуємо змінну тут, щоб мати доступ до ID документа в catch блоці
 	let newDocId = null;
 
 	try {
@@ -12,6 +11,11 @@ const uploadDocument = async (req, res) => {
 		const file = req.file;
 
 		if (!file) return res.status(400).send('No file uploaded');
+
+		// Виправляємо кодування назви для запису в БД (з latin1 в utf8)
+		file.originalname = Buffer.from(file.originalname, 'latin1').toString(
+			'utf8'
+		);
 
 		// 1. Перевірка прав
 		const check = await pool.query(

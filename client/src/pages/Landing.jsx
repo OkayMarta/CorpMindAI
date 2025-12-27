@@ -1,12 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 import logo from '/logoCropped.svg';
+import Button from '../components/ui/Button';
 
 const Landing = () => {
 	const navigate = useNavigate();
 
 	return (
 		<div className="h-screen bg-dark text-light relative flex flex-col overflow-hidden font-sans">
-			{/* HEADER: Логотип */}
+			{/* HEADER */}
 			<header className="w-full max-w-[1600px] mx-auto px-6 md:px-10 pt-6 md:pt-10 flex justify-between items-center z-20">
 				<div className="cursor-pointer">
 					<img
@@ -17,7 +18,7 @@ const Landing = () => {
 				</div>
 			</header>
 
-			{/* MAIN CONTENT: Центрування по вертикалі та горизонталі */}
+			{/* MAIN CONTENT */}
 			<main className="flex-grow flex flex-col justify-center items-center text-center z-10 px-6">
 				{/* Main Title */}
 				<h1 className="text-5xl md:text-7xl font-medium mb-6 tracking-tight text-light">
@@ -30,13 +31,13 @@ const Landing = () => {
 					corporate archives via a secure, personalized AI interface.
 				</p>
 
-				{/* Gradient Button */}
-				<button
+				{/* UI Button */}
+				<Button
 					onClick={() => navigate('/login')}
-					className="px-10 py-3 rounded-[4px] text-base md:text-lg font-semibold text-light uppercase tracking-wider bg-gradient-btn hover:bg-gradient-btn-hover transform hover:scale-105 transition duration-300 ease-in-out shadow-lg"
+					className="px-10 py-3 rounded-[4px] text-base md:text-lg uppercase tracking-wider transform hover:scale-105"
 				>
 					Get Started
-				</button>
+				</Button>
 			</main>
 
 			{/* FOOTER */}

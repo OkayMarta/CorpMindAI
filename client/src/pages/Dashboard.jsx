@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import { MessageSquare, Settings, Trash2, Plus } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -15,6 +15,8 @@ import CreateWorkspaceModal from '../features/workspace/components/CreateWorkspa
 
 const Dashboard = () => {
 	const navigate = useNavigate();
+
+	const { searchQuery } = useOutletContext() || { searchQuery: '' };
 
 	// Data State
 	const [workspaces, setWorkspaces] = useState([]);
@@ -95,9 +97,15 @@ const Dashboard = () => {
 	};
 
 	const filteredWorkspaces = workspaces.filter((w) => {
-		if (filter === 'owner') return w.role === 'owner';
-		if (filter === 'member') return w.role === 'member';
-		return true;
+		let matchesRole = true;
+		if (filter === 'owner') matchesRole = w.role === 'owner';
+		if (filter === 'member') matchesRole = w.role === 'member';
+
+		const matchesSearch = w.title
+			.toLowerCase()
+			.includes(searchQuery.toLowerCase());
+
+		return matchesRole && matchesSearch;
 	});
 
 	if (loading) {
@@ -123,7 +131,6 @@ const Dashboard = () => {
 						It looks like you don't have any workspaces yet.
 					</p>
 
-					{/* Використовуємо наш UI Button */}
 					<Button
 						onClick={() => setCreateModalOpen(true)}
 						className="transform hover:scale-105"

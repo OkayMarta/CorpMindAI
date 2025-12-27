@@ -13,19 +13,16 @@ const storage = multer.diskStorage({
 		cb(null, 'uploads/');
 	},
 	filename: function (req, file, cb) {
-		// 1. Декодуємо ім'я (для коректного відображення кирилиці при завантаженні)
+		// 1. Спочатку розкодуємо, щоб отримати кирилицю
 		const utf8Name = Buffer.from(file.originalname, 'latin1').toString(
 			'utf8'
 		);
 
-		// 2. Санітизація:
-		// - Замінюємо всі пробіли на підкреслення (_)
-		// - Видаляємо все, що НЕ є буквами (укр/анг), цифрами, крапкою, тире або підкресленням
+		// 2. Очищаємо від усього зайвого для файлової системи (залишаємо букви, цифри, ., -)
 		const sanitizedName = utf8Name
 			.replace(/\s+/g, '_')
 			.replace(/[^a-zA-Z0-9а-яА-ЯіїєґІЇЄҐ.\-_]/g, '');
 
-		// 3. Додаємо timestamp для унікальності
 		cb(null, Date.now() + '-' + sanitizedName);
 	},
 });

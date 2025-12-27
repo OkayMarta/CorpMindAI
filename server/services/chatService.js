@@ -14,10 +14,25 @@ const askAI = async (workspaceId, question) => {
 
 		// 2. Пошук в ChromaDB
 		const collectionName = `workspace_${workspaceId}`;
-		const collection = await chromaClient.getCollection({
-			name: collectionName,
-			embeddingFunction: { generate: async () => [] },
-		});
+		let collection;
+
+		// Перевіряємо, чи існує колекція, перш ніж робити запит
+		try {
+			collection = await chromaClient.getCollection({
+				name: collectionName,
+				embeddingFunction: { generate: async () => [] },
+			});
+		} catch (e) {
+			// Якщо колекції немає - це нормально для нового чату
+			console.log(
+				`[Chat] Collection ${collectionName} not found (empty workspace).`
+			);
+			// Повертаємо загальну відповідь від LLM без контексту
+			const result = await llmModel.generateContent(
+				`Answer the user's question. Context is unavailable (no documents). Question: ${question}`
+			);
+			return result.response.text();
+		}
 
 		const searchResults = await collection.query({
 			queryEmbeddings: [queryVector],
@@ -32,7 +47,7 @@ const askAI = async (workspaceId, question) => {
 			return 'Unfortunately, I did not find enough information in your documents to answer this question.';
 		}
 
-		// 3. Промпт (Трохи уточнимо роль)
+		// 3. Промпт
 		const prompt = `
         You are an intelligent expert assistant named "CorpMindAI".
         Your task is to answer the user's question accurately using ONLY the provided context below.

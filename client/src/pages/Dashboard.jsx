@@ -12,6 +12,7 @@ import Button from '../components/ui/Button';
 // Features / Modals
 import WorkspaceSettingsModal from '../features/workspace/components/WorkspaceSettingsModal';
 import CreateWorkspaceModal from '../features/workspace/components/CreateWorkspaceModal';
+import ConfirmationModal from '../components/ui/ConfirmationModal';
 
 const Dashboard = () => {
 	const navigate = useNavigate();
@@ -27,6 +28,14 @@ const Dashboard = () => {
 	const [createModalOpen, setCreateModalOpen] = useState(false);
 	const [settingsModalOpen, setSettingsModalOpen] = useState(false);
 	const [selectedWorkspace, setSelectedWorkspace] = useState(null);
+
+	// Confirmation Modal State
+	const [confirmModal, setConfirmModal] = useState({
+		isOpen: false,
+		workspace: null,
+		type: null, // 'delete' | 'leave'
+	});
+	const [isDeleting, setIsDeleting] = useState(false);
 
 	useEffect(() => {
 		const fetchWorkspaces = async () => {
@@ -58,17 +67,23 @@ const Dashboard = () => {
 		}
 	};
 
-	const handleDeleteWorkspace = async (e, workspace) => {
+	const openDeleteModal = (e, workspace) => {
 		e.stopPropagation();
 		const isOwner = workspace.role === 'owner';
-		const confirmMessage = isOwner
-			? `Are you sure you want to delete "${workspace.title}"?`
-			: `Are you sure you want to leave "${workspace.title}"?`;
+		setConfirmModal({
+			isOpen: true,
+			workspace,
+			type: isOwner ? 'delete' : 'leave',
+		});
+	};
 
-		if (!window.confirm(confirmMessage)) return;
+	const handleConfirmAction = async () => {
+		const { workspace, type } = confirmModal;
+		if (!workspace) return;
 
+		setIsDeleting(true);
 		try {
-			if (isOwner) {
+			if (type === 'delete') {
 				await workspaceService.delete(workspace.id);
 				toast.success('Workspace deleted');
 			} else {
@@ -76,8 +91,11 @@ const Dashboard = () => {
 				toast.success('Left workspace');
 			}
 			setWorkspaces((prev) => prev.filter((w) => w.id !== workspace.id));
+			setConfirmModal({ isOpen: false, workspace: null, type: null });
 		} catch (error) {
 			toast.error('Operation failed');
+		} finally {
+			setIsDeleting(false);
 		}
 	};
 
@@ -244,7 +262,7 @@ const Dashboard = () => {
 											</button>
 											<button
 												onClick={(e) =>
-													handleDeleteWorkspace(
+													openDeleteModal(
 														e,
 														workspace
 													)
@@ -298,6 +316,30 @@ const Dashboard = () => {
 				isOpen={createModalOpen}
 				onClose={() => setCreateModalOpen(false)}
 				onSubmit={handleCreateSubmit}
+			/>
+
+			{/* Confirmation Modal */}
+			<ConfirmationModal
+				isOpen={confirmModal.isOpen}
+				onClose={() =>
+					setConfirmModal({ ...confirmModal, isOpen: false })
+				}
+				onConfirm={handleConfirmAction}
+				isLoading={isDeleting}
+				title={
+					confirmModal.type === 'delete'
+						? 'Delete Workspace'
+						: 'Leave Workspace'
+				}
+				message={
+					confirmModal.type === 'delete'
+						? `Are you sure you want to permanently delete "${confirmModal.workspace?.title}"? This action cannot be undone and will delete all documents and chats.`
+						: `Are you sure you want to leave "${confirmModal.workspace?.title}"? You will lose access to documents and chats.`
+				}
+				confirmText={
+					confirmModal.type === 'delete' ? 'Delete' : 'Leave'
+				}
+				isDangerous={true}
 			/>
 		</div>
 	);

@@ -9,6 +9,7 @@ import { ArrowLeft, Settings, Trash2 } from 'lucide-react';
 import ChatWindow from '../features/chat/components/ChatWindow';
 import ChatInput from '../features/chat/components/ChatInput';
 import WorkspaceSettingsModal from '../features/workspace/components/WorkspaceSettingsModal';
+import ConfirmationModal from '../components/ui/ConfirmationModal';
 
 const Workspace = () => {
 	const { id } = useParams();
@@ -19,6 +20,10 @@ const Workspace = () => {
 	const [loading, setLoading] = useState(true);
 	const [sending, setSending] = useState(false);
 	const [settingsOpen, setSettingsOpen] = useState(false);
+
+	// Confirmation Modal State
+	const [confirmOpen, setConfirmOpen] = useState(false);
+	const [isDeleting, setIsDeleting] = useState(false);
 
 	useEffect(() => {
 		const loadData = async () => {
@@ -60,17 +65,22 @@ const Workspace = () => {
 		}
 	};
 
-	const handleDelete = async () => {
-		const isOwner = workspace.role === 'owner';
-		const text = isOwner ? 'Delete Workspace?' : 'Leave Workspace?';
-		if (!window.confirm(text)) return;
+	// Відкриття модалки
+	const handleDeleteClick = () => {
+		setConfirmOpen(true);
+	};
 
+	// Виконання видалення
+	const handleConfirmDelete = async () => {
+		setIsDeleting(true);
+		const isOwner = workspace.role === 'owner';
 		try {
 			if (isOwner) await workspaceService.delete(id);
 			else await workspaceService.leave(id);
 			navigate('/dashboard');
 		} catch (e) {
 			toast.error('Operation failed');
+			setIsDeleting(false);
 		}
 	};
 
@@ -122,7 +132,7 @@ const Workspace = () => {
 						</button>
 
 						<button
-							onClick={handleDelete}
+							onClick={handleDeleteClick}
 							className="p-2 text-gray-400 hover:text-uiError hover:bg-uiError/10 rounded-full transition-colors"
 							title={
 								workspace?.role === 'owner'
@@ -145,6 +155,7 @@ const Workspace = () => {
 				<ChatInput onSend={handleSendMessage} disabled={sending} />
 			</div>
 
+			{/* Settings Modal */}
 			{workspace && (
 				<WorkspaceSettingsModal
 					isOpen={settingsOpen}
@@ -157,6 +168,26 @@ const Workspace = () => {
 					}
 				/>
 			)}
+
+			{/* Confirmation Modal */}
+			<ConfirmationModal
+				isOpen={confirmOpen}
+				onClose={() => setConfirmOpen(false)}
+				onConfirm={handleConfirmDelete}
+				isLoading={isDeleting}
+				title={
+					workspace?.role === 'owner'
+						? 'Delete Workspace'
+						: 'Leave Workspace'
+				}
+				message={
+					workspace?.role === 'owner'
+						? 'Are you sure you want to permanently delete this workspace? This action cannot be undone and will delete all documents and chat history.'
+						: 'Are you sure you want to leave this workspace? You will lose access to documents and chats.'
+				}
+				confirmText={workspace?.role === 'owner' ? 'Delete' : 'Leave'}
+				isDangerous={true}
+			/>
 		</div>
 	);
 };

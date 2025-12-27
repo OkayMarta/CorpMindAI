@@ -82,27 +82,28 @@ const Workspace = () => {
 	return (
 		<div className="flex flex-col h-full relative">
 			{/* HEADER */}
-			<div className="fixed top-0 left-72 right-0 h-16 flex items-center justify-between px-6 border-b border-gray-700 bg-dark z-30">
+			<div className="fixed top-0 left-0 lg:left-72 right-0 h-16 flex items-center justify-between px-4 lg:px-6 border-b border-gray-700 bg-dark z-50">
 				{/* LEFT: Back + Title */}
-				<div className="flex items-center gap-4">
+				<div className="flex items-center gap-3 overflow-hidden">
 					<button
 						onClick={() => navigate('/dashboard')}
-						className="p-2 text-gray-400 hover:text-light hover:bg-gray-800 rounded-full transition-colors"
+						className="p-2 -ml-2 text-gray-400 hover:text-light hover:bg-gray-800 rounded-full transition-colors flex-shrink-0"
 						title="Back to Dashboard"
 					>
 						<ArrowLeft className="w-5 h-5" />
 					</button>
 
 					{/* Назва чату */}
-					<h2 className="text-xl font-bold text-light truncate max-w-md tracking-tight">
+					<h2 className="text-lg lg:text-xl font-bold text-light truncate">
 						{workspace?.title}
 					</h2>
 				</div>
 
-				<div className="flex items-center gap-4">
-					{/* Role Badge */}
+				{/* RIGHT: Buttons */}
+				<div className="flex items-center gap-1 lg:gap-4 flex-shrink-0 ml-2">
+					{/* Role Badge: Тільки на планшетах і десктопах */}
 					<span
-						className={`mr-10 text-xs px-3 py-1 rounded uppercase font-bold tracking-wider shadow-sm ${
+						className={`hidden md:inline-flex mr-2 lg:mr-4 text-xs px-3 py-1 rounded uppercase font-bold tracking-wider shadow-sm ${
 							workspace?.role === 'owner'
 								? 'bg-gold/20 text-gold'
 								: 'bg-purple/20 text-purple'
@@ -111,7 +112,7 @@ const Workspace = () => {
 						{workspace?.role === 'owner' ? 'Admin' : 'Member'}
 					</span>
 
-					<div className="flex items-center gap-1">
+					<div className="flex items-center gap-0.5 md:gap-1">
 						<button
 							onClick={() => setSettingsOpen(true)}
 							className="p-2 text-gray-400 hover:text-light hover:bg-gray-800 rounded-full transition-colors"
@@ -135,6 +136,7 @@ const Workspace = () => {
 				</div>
 			</div>
 
+			{/* CONTENT */}
 			<div className="flex-1 flex flex-col pt-0 h-[calc(100vh-64px)]">
 				<ChatWindow
 					messages={messages}

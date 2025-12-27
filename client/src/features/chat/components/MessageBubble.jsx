@@ -30,21 +30,24 @@ const MessageBubble = ({ message, isOwner }) => {
 
 	return (
 		<div
-			className={`flex gap-4 max-w-3xl ${
+			className={`flex gap-2 md:gap-4 max-w-3xl ${
 				isUser ? 'ml-auto flex-row-reverse' : ''
 			}`}
 		>
+			{/* Аватар */}
 			<div
-				className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${avatarStyle}`}
+				className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0 ${avatarStyle}`}
 			>
 				{isUser ? (
-					<User className="w-5 h-5" />
+					<User className="w-4 h-4 md:w-5 md:h-5" />
 				) : (
-					<Bot className="w-5 h-5" />
+					<Bot className="w-4 h-4 md:w-5 md:h-5" />
 				)}
 			</div>
+
+			{/* Бульбашка з текстом */}
 			<div
-				className={`p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${bubbleStyle}`}
+				className={`p-3 md:p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap max-w-[85%] md:max-w-full ${bubbleStyle}`}
 			>
 				{message.content}
 			</div>

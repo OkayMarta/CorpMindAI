@@ -16,22 +16,17 @@ const askAI = async (workspaceId, question) => {
 		const collectionName = `workspace_${workspaceId}`;
 		let collection;
 
-		// Перевіряємо, чи існує колекція, перш ніж робити запит
+		// Перевіряємо, чи існує колекція
 		try {
 			collection = await chromaClient.getCollection({
 				name: collectionName,
 				embeddingFunction: { generate: async () => [] },
 			});
 		} catch (e) {
-			// Якщо колекції немає - це нормально для нового чату
 			console.log(
 				`[Chat] Collection ${collectionName} not found (empty workspace).`
 			);
-			// Повертаємо загальну відповідь від LLM без контексту
-			const result = await llmModel.generateContent(
-				`Answer the user's question. Context is unavailable (no documents). Question: ${question}`
-			);
-			return result.response.text();
+			return "I don't see any documents in this workspace yet. Please upload a PDF, DOCX, or TXT file so I can answer your questions based on them.";
 		}
 
 		const searchResults = await collection.query({
@@ -42,7 +37,6 @@ const askAI = async (workspaceId, question) => {
 		const context = searchResults.documents[0].join('\n\n---\n\n');
 		console.log(`[Chat] Context length: ${context.length} chars`);
 
-		// Якщо контекст порожній або дуже малий
 		if (!context || context.length < 50) {
 			return 'Unfortunately, I did not find enough information in your documents to answer this question.';
 		}
@@ -52,14 +46,13 @@ const askAI = async (workspaceId, question) => {
         You are an intelligent expert assistant named "CorpMindAI".
         Your task is to answer the user's question accurately using ONLY the provided context below.
         
-        Context information is extracted from the user's uploaded documents (PDFs, etc).
+        Context information is extracted from the user's uploaded documents.
         
         Instructions:
-        1. Analyze the context thoroughly. The answer might be spread across multiple sections.
-        2. If the context contains the answer, explain it clearly in Ukrainian.
-        3. Use formatting (bullet points, bold text) to make the answer readable.
-        4. If the exact answer is missing, but there is related info, summarize what is available.
-        5. If the context has absolutely no relevance to the question, politely state that you cannot find the answer in the documents.
+        1. Analyze the context thoroughly.
+        2. If the context contains the answer, explain it clearly.
+        3. Use formatting (bullet points, bold text).
+        4. If the context has absolutely no relevance to the question, politely state that you cannot find the answer in the documents.
 
         Context:
         ${context}

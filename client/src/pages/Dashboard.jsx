@@ -43,7 +43,6 @@ const Dashboard = () => {
 	}, []);
 
 	// --- Handlers ---
-
 	const handleCreateSubmit = async (title) => {
 		try {
 			const newWorkspace = await workspaceService.create(title);
@@ -89,7 +88,6 @@ const Dashboard = () => {
 	};
 
 	// --- Helpers ---
-
 	const getRoleBadgeStyles = (role) => {
 		return role === 'owner'
 			? 'bg-gold/20 text-gold'
@@ -117,10 +115,10 @@ const Dashboard = () => {
 	}
 
 	return (
-		<div className="p-8 max-w-5xl mx-auto">
+		<div className="p-4 md:p-8 max-w-5xl mx-auto pb-20">
 			{/* --- EMPTY STATE --- */}
 			{workspaces.length === 0 ? (
-				<div className="flex flex-col items-center justify-center h-[60vh] text-center">
+				<div className="flex flex-col items-center justify-center h-[60vh] text-center px-4">
 					<div className="bg-gray-800 p-6 rounded-full mb-6">
 						<MessageSquare className="w-12 h-12 text-blue" />
 					</div>
@@ -141,8 +139,8 @@ const Dashboard = () => {
 			) : (
 				<>
 					{/* --- FILTERS HEADER --- */}
-					<div className="flex items-center justify-between mb-6 select-none">
-						<div className="flex items-center text-l gap-3">
+					<div className="flex items-center justify-between mb-6 select-none overflow-x-auto">
+						<div className="flex items-center text-base md:text-lg gap-3 md:gap-4 whitespace-nowrap">
 							<button
 								onClick={() => setFilter('all')}
 								className={`transition-colors duration-200 ${
@@ -153,7 +151,7 @@ const Dashboard = () => {
 							>
 								All
 							</button>
-							<span className="text-gray-600 font-thin text-xl pb-1">
+							<span className="text-gray-600 font-thin text-lg pb-0.5">
 								|
 							</span>
 							<button
@@ -166,7 +164,7 @@ const Dashboard = () => {
 							>
 								Admin
 							</button>
-							<span className="text-gray-600 font-thin text-xl pb-1">
+							<span className="text-gray-600 font-thin text-lg pb-0.5">
 								|
 							</span>
 							<button
@@ -180,7 +178,7 @@ const Dashboard = () => {
 								Member
 							</button>
 						</div>
-						<div className="text-gray-500 text-sm font-medium">
+						<div className="text-gray-500 text-xs md:text-sm font-medium ml-4 whitespace-nowrap">
 							Total:{' '}
 							<span className="text-gray ml-1">
 								{filteredWorkspaces.length}
@@ -188,7 +186,7 @@ const Dashboard = () => {
 						</div>
 					</div>
 
-					{/* --- GRID --- */}
+					{/* --- GRID (List View) --- */}
 					<div className="space-y-3">
 						{filteredWorkspaces.map((workspace) => (
 							<div
@@ -196,28 +194,32 @@ const Dashboard = () => {
 								onClick={() =>
 									navigate(`/workspace/${workspace.id}`)
 								}
-								className="group bg-dark2 border border-gray-800 hover:border-blue rounded-lg px-4 py-3 flex items-center cursor-pointer transition-all duration-200"
+								className="group bg-dark2 border border-gray-800 hover:border-blue rounded-lg px-3 py-3 md:px-4 flex items-center cursor-pointer transition-all duration-200"
 							>
 								{/* Icon */}
-								<div className="w-10 h-10 rounded bg-gray-800 flex flex-shrink-0 items-center justify-center text-blue group-hover:bg-blue group-hover:text-light transition-colors mr-4">
+								<div className="w-10 h-10 rounded bg-gray-800 flex flex-shrink-0 items-center justify-center text-blue group-hover:bg-blue group-hover:text-light transition-colors mr-3 md:mr-4">
 									<MessageSquare className="w-5 h-5" />
 								</div>
 
 								{/* Info */}
 								<div className="flex-1 flex items-center justify-between overflow-hidden">
-									<h3 className="font-semibold text-lg text-light group-hover:text-blue transition-colors truncate mr-4">
+									{/* Назва */}
+									<h3 className="font-semibold text-base md:text-lg text-light group-hover:text-blue transition-colors truncate mr-2 md:mr-4">
 										{workspace.title}
 									</h3>
 
-									<div className="flex items-center gap-6 flex-shrink-0">
-										<span className="text-sm text-gray-500">
+									{/* Мета-дані та кнопки */}
+									<div className="flex items-center gap-2 md:gap-6 flex-shrink-0">
+										{/* Дата - ховаємо на мобілці */}
+										<span className="hidden md:block text-sm text-gray-500">
 											{new Date(
 												workspace.created_at
 											).toLocaleDateString()}
 										</span>
 
+										{/* Роль */}
 										<span
-											className={`text-xs px-2 py-0.5 rounded uppercase font-bold tracking-wider w-20 text-center ${getRoleBadgeStyles(
+											className={`text-[10px] md:text-xs px-2 py-0.5 rounded uppercase font-bold tracking-wider md:w-20 text-center ${getRoleBadgeStyles(
 												workspace.role
 											)}`}
 										>
@@ -227,7 +229,7 @@ const Dashboard = () => {
 										</span>
 
 										{/* Action Buttons */}
-										<div className="flex items-center gap-2 w-16 justify-end">
+										<div className="flex items-center gap-1 md:gap-2">
 											<button
 												onClick={(e) =>
 													handleOpenSettings(
@@ -235,10 +237,10 @@ const Dashboard = () => {
 														workspace
 													)
 												}
-												className="p-1.5 text-gray-400 hover:text-light hover:bg-gray-700 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+												className="p-1.5 text-gray-400 hover:text-light hover:bg-gray-700 rounded-full transition-colors"
 												title="Settings"
 											>
-												<Settings className="w-5 h-5" />
+												<Settings className="w-4 h-4 md:w-5 md:h-5" />
 											</button>
 											<button
 												onClick={(e) =>
@@ -247,14 +249,14 @@ const Dashboard = () => {
 														workspace
 													)
 												}
-												className="p-1.5 text-gray-400 hover:text-uiError hover:bg-uiError/10 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+												className="p-1.5 text-gray-400 hover:text-uiError hover:bg-uiError/10 rounded-full transition-colors"
 												title={
 													workspace.role === 'owner'
 														? 'Delete'
 														: 'Leave'
 												}
 											>
-												<Trash2 className="w-5 h-5" />
+												<Trash2 className="w-4 h-4 md:w-5 md:h-5" />
 											</button>
 										</div>
 									</div>
@@ -273,7 +275,6 @@ const Dashboard = () => {
 			)}
 
 			{/* --- MODALS --- */}
-
 			{selectedWorkspace && (
 				<WorkspaceSettingsModal
 					isOpen={settingsModalOpen}

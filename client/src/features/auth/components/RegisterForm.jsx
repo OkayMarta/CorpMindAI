@@ -102,11 +102,11 @@ const RegisterForm = () => {
 	};
 
 	return (
-		<div className="bg-light px-10 py-8 md:px-14 md:py-10 rounded shadow-2xl w-full max-w-[550px] text-center">
-			<h2 className="text-3xl font-bold text-dark mb-2">
+		<div className="bg-light px-6 py-8 md:px-12 md:py-10 rounded shadow-2xl w-full max-w-[550px] text-center">
+			<h2 className="text-2xl md:text-3xl font-bold text-dark mb-2">
 				Join CorpMind<span className="text-gold">AI</span>
 			</h2>
-			<p className="text-uiDisabled text-sm mb-6">
+			<p className="text-uiDisabled text-sm mb-5">
 				Create an account to start your journey
 			</p>
 
@@ -145,14 +145,14 @@ const RegisterForm = () => {
 
 				<Button
 					type="submit"
-					className="w-full py-4 mt-6 text-lg uppercase tracking-wider"
+					className="w-full py-4 mt-4 text-lg uppercase tracking-wider" // mt-6 -> mt-4
 					isLoading={isLoading}
 				>
 					Sign Up
 				</Button>
 			</form>
 
-			<div className="mt-6 text-center text-sm text-uiDisabled">
+			<div className="mt-5 text-center text-sm text-uiDisabled">
 				Already have an account?{' '}
 				<Link
 					to="/login"

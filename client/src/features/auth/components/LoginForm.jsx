@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../../../services/auth';
 import { useAuth } from '../../../context/AuthContext';
 import { toast } from 'react-toastify';
-import { Eye, EyeOff, Mail } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { handleError } from '../../../utils/errorHandler';
 
 // Імпорт UI
@@ -38,15 +38,15 @@ const LoginForm = () => {
 	};
 
 	return (
-		<div className="bg-light p-10 md:p-14 rounded shadow-2xl w-full max-w-[550px] text-center">
-			<h2 className="text-3xl font-bold text-dark mb-2">
+		<div className="bg-light p-6 md:p-12 rounded shadow-2xl w-full max-w-[550px] text-center">
+			<h2 className="text-2xl md:text-3xl font-bold text-dark mb-2">
 				Log In to CorpMind<span className="text-gold">AI</span>
 			</h2>
-			<p className="text-uiDisabled text-sm mb-10">
+			<p className="text-uiDisabled text-sm mb-6">
 				Enter your credentials to access your workspace
 			</p>
 
-			<form onSubmit={handleSubmit} className="space-y-6 text-left">
+			<form onSubmit={handleSubmit} className="space-y-5 text-left">
 				<Input
 					type="email"
 					label="EMAIL ADDRESS"
@@ -72,7 +72,7 @@ const LoginForm = () => {
 					onRightIconClick={() => setShowPassword(!showPassword)}
 				/>
 
-				<div className="flex items-center justify-between text-sm pt-2">
+				<div className="flex items-center justify-between text-sm pt-1">
 					<label className="flex items-center cursor-pointer">
 						<input
 							type="checkbox"

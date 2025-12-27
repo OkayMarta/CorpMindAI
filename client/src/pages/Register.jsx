@@ -6,9 +6,9 @@ const Register = () => {
 	const navigate = useNavigate();
 
 	return (
-		<div className="h-screen bg-dark font-sans overflow-hidden flex flex-col">
-			<div className="flex-grow w-full pt-6 md:pt-10">
-				<div className="w-full max-w-[1600px] mx-auto px-6 md:px-10 flex flex-col md:flex-row justify-between items-start gap-8">
+		<div className="min-h-screen bg-dark font-sans flex flex-col">
+			<div className="flex-grow w-full py-6 md:pt-10">
+				<div className="w-full max-w-[1600px] mx-auto px-6 md:px-10 flex flex-col md:flex-row justify-between items-center md:items-start gap-8">
 					{/* 1. ЛІВА ЧАСТИНА: Логотип */}
 					<div className="w-full md:w-auto md:flex-1 flex justify-center md:justify-start">
 						<div
@@ -29,7 +29,7 @@ const Register = () => {
 					</main>
 
 					{/* 3. ПРАВА ЧАСТИНА: Кнопка Log In */}
-					<div className="w-full md:w-auto md:flex-1 flex justify-center md:justify-end order-first md:order-last mb-4 md:mb-0">
+					<div className="w-full md:w-auto md:flex-1 flex justify-center md:justify-end mt-8 md:mt-0 md:order-last">
 						<button
 							onClick={() => navigate('/login')}
 							className="btn-outlined"

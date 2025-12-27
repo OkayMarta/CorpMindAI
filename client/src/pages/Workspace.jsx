@@ -97,7 +97,7 @@ const Workspace = () => {
 				<div className="flex items-center gap-3 overflow-hidden">
 					<button
 						onClick={() => navigate('/dashboard')}
-						className="p-2 -ml-2 text-gray-400 hover:text-light hover:bg-gray-800 rounded-full transition-colors flex-shrink-0"
+						className="p-2 text-gray-400 hover:text-light hover:bg-gray-800 rounded-full transition-colors flex-shrink-0"
 						title="Back to Dashboard"
 					>
 						<ArrowLeft className="w-5 h-5" />

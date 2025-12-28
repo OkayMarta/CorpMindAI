@@ -22,6 +22,21 @@ const sendMessage = async (req, res) => {
 			[workspaceId, userId, aiResponse]
 		);
 
+		// --- Очистка старих повідомлень ---
+		// Залишаємо тільки 20 найновіших повідомлень для цього чату. Запит видаляє всі повідомлення, ID яких не входять у топ-20 найновіших
+		await pool.query(
+			`
+            DELETE FROM messages
+            WHERE id IN (
+                SELECT id FROM messages
+                WHERE workspace_id = $1
+                ORDER BY created_at DESC
+                OFFSET 20
+            )
+        `,
+			[workspaceId]
+		);
+
 		res.json(savedMsg.rows[0]);
 	} catch (err) {
 		console.error(err);

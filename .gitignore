@@ -1,22 +1,25 @@
 # Dependencies (бібліотеки)
 node_modules/
+**/node_modules
 
-# Environment variables (СЕКРЕТНІ ДАНІ)
+# Environment variables
 .env
 .env.local
 .env.*.local
+client/.env
+server/.env
 
 # Build output (зібраний фронтенд)
 dist/
 build/
 
-# Logs (логи помилок)
+# Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Editor directories (налаштування редакторів)
+# Editor directories
 .idea/
 .vscode/
 *.suo
@@ -31,3 +34,7 @@ Thumbs.db
 
 server/uploads/*
 !server/uploads/.gitkeep
+
+# Папки збірки фронтенду
+client/dist
+client/build

@@ -3,12 +3,13 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 require('dotenv').config();
 
 // 1. Chroma
-const chromaClient = new ChromaClient(); // за замовчуванням підключається до http://localhost:8000
+const chromaUrl = process.env.CHROMA_URL || 'http://localhost:8000';
+const chromaClient = new ChromaClient({ path: chromaUrl });
 
 // 2. Google Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const llmModel = genAI.getGenerativeModel({
-	model: 'gemini-flash-latest', // Рекомендую явно вказати 'gemini-1.5-flash', вона краща за стару flash-latest
+	model: 'gemini-1.5-flash',
 });
 
 // 3. Локальна модель (Embeddings)

@@ -42,7 +42,7 @@ Securely upload and index corporate documents for the knowledge base.
 
 ## ✨ Key Features
 
--   **🤖 RAG-Powered Chat:** Uses **Google Gemini 1.5 Flash** combined with **ChromaDB** to answer questions strictly based on your uploaded data.
+-   **🤖 RAG-Powered Chat:** Uses **Google Gemini Flash** combined with **ChromaDB** to answer questions strictly based on your uploaded data.
 -   **📂 Multi-Format Support:** Upload and index `.pdf`, `.docx`, and `.txt` files automatically.
 -   **🏢 Workspaces & Teams:** Create isolated workspaces and invite team members via email.
 -   **📱 Fully Responsive:** Adaptive UI that works seamlessly on Desktop, Tablet, and Mobile.

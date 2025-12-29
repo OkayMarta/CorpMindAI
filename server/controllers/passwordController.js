@@ -19,7 +19,7 @@ const sendEmail = async (email, link) => {
 		html: `
             <div style="font-family: Arial, sans-serif; color: #333;">
                 <h2>Password Reset Request</h2>
-                <p>You requested to reset your password for your CorpMind AI account.</p>
+                <p>You requested to reset your password for your CorpMindAI account.</p>
                 <p>Click the button below to set a new password:</p>
                 <a href="${link}" style="background-color: #665DCD; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">Reset Password</a>
                 <p>This link is valid for 1 hour.</p>

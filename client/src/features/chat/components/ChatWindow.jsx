@@ -13,7 +13,7 @@ const ChatWindow = ({ messages, workspaceRole }) => {
 
 	if (messages.length === 0) {
 		return (
-			<div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-60 px-4 text-center">
+			<div className="flex-1 h-full flex flex-col items-center justify-center text-gray-500 opacity-60 px-4 text-center">
 				<Bot className="w-12 h-12 md:w-16 md:h-16 mb-4 text-blue" />
 				<p className="font-medium">Start a conversation</p>
 				<p className="text-xs md:text-sm mt-1">
@@ -24,7 +24,7 @@ const ChatWindow = ({ messages, workspaceRole }) => {
 	}
 
 	return (
-		<div className="flex-1 overflow-y-auto p-3 md:p-6 space-y-4 md:space-y-6 custom-scrollbar">
+		<div className="flex-1 h-full overflow-y-auto p-3 md:p-6 space-y-4 custom-scrollbar">
 			{messages.map((msg) => (
 				<MessageBubble key={msg.id} message={msg} isOwner={isOwner} />
 			))}

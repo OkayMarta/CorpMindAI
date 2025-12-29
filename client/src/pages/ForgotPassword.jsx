@@ -38,7 +38,7 @@ const ForgotPassword = () => {
 						>
 							<img
 								src={logo}
-								alt="CorpMind AI"
+								alt="CorpMindAI"
 								className="w-24 md:w-32"
 							/>
 						</div>

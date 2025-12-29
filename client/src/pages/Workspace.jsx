@@ -65,12 +65,10 @@ const Workspace = () => {
 		}
 	};
 
-	// Відкриття модалки
 	const handleDeleteClick = () => {
 		setConfirmOpen(true);
 	};
 
-	// Виконання видалення
 	const handleConfirmDelete = async () => {
 		setIsDeleting(true);
 		const isOwner = workspace.role === 'owner';
@@ -86,13 +84,15 @@ const Workspace = () => {
 
 	if (loading)
 		return (
-			<div className="text-center mt-20 text-gray-500">Loading...</div>
+			<div className="flex items-center justify-center h-full text-gray-500">
+				Loading...
+			</div>
 		);
 
 	return (
 		<div className="flex flex-col h-full relative">
 			{/* HEADER */}
-			<div className="fixed top-0 left-0 lg:left-72 right-0 h-16 flex items-center justify-between px-4 lg:px-6 border-b border-gray-700 bg-dark z-50">
+			<div className="h-16 flex items-center justify-between px-4 lg:px-6 border-b border-gray-700 bg-dark z-20 flex-shrink-0">
 				{/* LEFT: Back + Title */}
 				<div className="flex items-center gap-3 overflow-hidden">
 					<button
@@ -111,7 +111,6 @@ const Workspace = () => {
 
 				{/* RIGHT: Buttons */}
 				<div className="flex items-center gap-1 lg:gap-4 flex-shrink-0 ml-2">
-					{/* Role Badge: Тільки на планшетах і десктопах */}
 					<span
 						className={`hidden md:inline-flex mr-2 lg:mr-4 text-xs px-3 py-1 rounded uppercase font-bold tracking-wider shadow-sm ${
 							workspace?.role === 'owner'
@@ -147,7 +146,7 @@ const Workspace = () => {
 			</div>
 
 			{/* CONTENT */}
-			<div className="flex-1 flex flex-col pt-0 h-[calc(100vh-64px)]">
+			<div className="flex-1 flex flex-col min-h-0 bg-dark overflow-hidden">
 				<ChatWindow
 					messages={messages}
 					workspaceRole={workspace?.role}

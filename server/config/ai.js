@@ -9,7 +9,7 @@ const chromaClient = new ChromaClient({ path: chromaUrl });
 // 2. Google Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const llmModel = genAI.getGenerativeModel({
-	model: 'gemini-1.5-flash',
+	model: 'gemini-flash-latest',
 });
 
 // 3. Локальна модель (Embeddings)

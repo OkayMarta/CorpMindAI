@@ -6,24 +6,36 @@ Built with the **PERN stack** (PostgreSQL, Express, React, Node.js) and **Vector
 
 ---
 
-## 📸 Interface Screenshots
+## 📸 Interface Gallery
 
-### 1. Dashboard & Workspaces
+### 1. Landing & Authentication
+
+The entry point to the system, featuring a modern, responsive design.
+
+![Landing Page](./screenshots/landing.png)
+
+### 2. Dashboard & Workspaces
 
 Manage your projects and see your team status at a glance.
 
-![Empty Dashboard Screenshot](./screenshots/dashboard_empty.png)
+![Dashboard with created chats](./screenshots/dashboard_with_chats.png)
 
-![Dashboard with created chats Screenshot](./screenshots/dashboard_with_chats.png)
+### 3. Intelligent Chat (RAG)
 
-### 2. Intelligent Chat (RAG)
+Ask questions about your documents. The AI cites the context it used to generate the answer.
 
-Ask questions about your documents. The AI cites the context it used.
 ![Chat Interface](./screenshots/chat.png)
 
-### 3. Document Management
+### 4. Team Collaboration & Invitations
+
+Easily expand your team. Invite colleagues to specific workspaces via email, view current members, and manage access permissions directly from the workspace settings.
+
+![Team Members & Invitations](./screenshots/members_invite.png)
+
+### 5. Document Management
 
 Securely upload and index corporate documents for the knowledge base.
+
 ![Documents Manager](./screenshots/docs.png)
 
 ---
@@ -33,6 +45,7 @@ Securely upload and index corporate documents for the knowledge base.
 -   **🤖 RAG-Powered Chat:** Uses **Google Gemini 1.5 Flash** combined with **ChromaDB** to answer questions strictly based on your uploaded data.
 -   **📂 Multi-Format Support:** Upload and index `.pdf`, `.docx`, and `.txt` files automatically.
 -   **🏢 Workspaces & Teams:** Create isolated workspaces and invite team members via email.
+-   **📱 Fully Responsive:** Adaptive UI that works seamlessly on Desktop, Tablet, and Mobile.
 -   **🔐 Role-Based Access:** Granular permissions (`Owner` vs `Member`) for workspace management.
 -   **⚡ Real-time Vectorization:** Local embedding generation using `@xenova/transformers` (runs on CPU, no external embedding API cost).
 -   **🐳 Fully Dockerized:** One command to set up the Frontend, Backend, Database, and Vector DB.
@@ -138,25 +151,18 @@ Securely upload and index corporate documents for the knowledge base.
 
 ---
 
-## 📂 Project Structure
-
-```bash
-CorpMindAI/
-├── client/                 # React Frontend
-├── server/                 # Node.js Backend
-│   ├── config/             # DB & AI Configs
-│   ├── controllers/        # Request Handlers
-│   ├── services/           # Business Logic (Chat, RAG)
-│   └── uploads/            # Document Storage
-├── docker-compose.yml      # Container Orchestration
-├── init.sql                # Database Schema
-└── .env                    # Environment Variables
-```
-
----
-
 ## 🛡️ License
 
-This project is created for educational purposes.
+This project is licensed under the **Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)**.
 
----
+You are free to:
+
+-   **Share** — copy and redistribute the material in any medium or format.
+-   **Adapt** — remix, transform, and build upon the material.
+
+**Under the following terms:**
+
+-   **NonCommercial** — You may not use the material for commercial purposes (selling the app, SaaS, providing paid services using this code) without explicit permission.
+-   **Attribution** — You must give appropriate credit.
+
+For commercial inquiries or licensing, please contact the author.

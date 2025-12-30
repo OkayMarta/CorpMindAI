@@ -5,31 +5,29 @@ const fs = require('fs');
 const path = require('path');
 
 const uploadDocument = async (req, res) => {
+	// Змінні оголошуємо зовні try, щоб мати до них доступ у catch
 	let newDocId = null;
+	const file = req.file;
 
 	try {
-		const { workspaceId } = req.body;
-		const file = req.file;
-
 		if (!file) return res.status(400).send('No file uploaded');
 
-		// Виправляємо кодування назви для запису в БД (з latin1 в utf8)
-		file.originalname = Buffer.from(file.originalname, 'latin1').toString(
-			'utf8'
-		);
+		const { workspaceId } = req.body;
+		const userId = req.user.id;
 
-		// 1. Перевірка прав
+		// 1. ПЕРЕВІРКА ПРАВ (Тільки owner/admin може вантажити)
 		const check = await pool.query(
 			"SELECT * FROM workspace_members WHERE workspace_id = $1 AND user_id = $2 AND role IN ('owner', 'admin')",
-			[workspaceId, req.user.id]
+			[workspaceId, userId]
 		);
 
 		if (check.rows.length === 0) {
-			fs.unlinkSync(file.path);
+			// Якщо прав немає - ми ще нічого не створили, але файл multer вже зберіг. Видаляємо його.
+			if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
 			return res.status(403).send('Not authorized to upload here');
 		}
 
-		// 2. Зберігаємо запис в PostgreSQL
+		// 2. ЗАПИС В БД
 		const insertResult = await pool.query(
 			'INSERT INTO documents (workspace_id, filename, filepath, file_type, size) VALUES ($1, $2, $3, $4, $5) RETURNING *',
 			[
@@ -42,38 +40,62 @@ const uploadDocument = async (req, res) => {
 		);
 
 		const newDoc = insertResult.rows[0];
-		newDocId = newDoc.id; // Запам'ятовуємо ID
+		newDocId = newDoc.id; // Запам'ятовуємо ID для можливого відкату
 
-		// 3. Запускаємо RAG Pipeline
-		try {
-			await processDocument(
-				file.path,
-				file.mimetype,
-				workspaceId,
-				newDoc.id
-			);
-		} catch (ragError) {
-			console.error(
-				'[RAG Error] Processing failed, rolling back DB entry:',
-				ragError
-			);
+		// 3. RAG PIPELINE
+		console.log(`[Upload] Starting RAG processing for doc #${newDocId}...`);
 
-			// Якщо RAG впав, видаляємо запис з БД, який ми щойно створили
-			await pool.query('DELETE FROM documents WHERE id = $1', [newDocId]);
+		await processDocument(file.path, file.mimetype, workspaceId, newDocId);
 
-			// Прокидаємо помилку далі, щоб головний catch видалив фізичний файл
-			throw ragError;
-		}
+		console.log(`[Upload] Success! Doc #${newDocId} is ready.`);
 
+		// 4. УСПІХ
 		res.json(newDoc);
 	} catch (err) {
-		console.error(err);
-		// Якщо помилка - видаляємо файл з диску
-		if (req.file && fs.existsSync(req.file.path)) {
-			fs.unlinkSync(req.file.path);
+		console.error('[Upload Error] Pipeline failed:', err.message);
+
+		// === ROLLBACK (ВІДКАТ) ===
+
+		// Крок А: Видаляємо вектори з ChromaDB (якщо встигли щось записати)
+		if (newDocId) {
+			try {
+				const { workspaceId } = req.body;
+				const collectionName = `workspace_${workspaceId}`;
+				const collection = await chromaClient.getCollection({
+					name: collectionName,
+				});
+				await collection.delete({ where: { docId: newDocId } });
+				console.log('[Rollback] Cleared partial vectors from ChromaDB');
+			} catch (chromaErr) {
+				console.warn(
+					'[Rollback] Chroma cleanup skipped:',
+					chromaErr.message
+				);
+			}
+
+			// Крок Б: Видаляємо запис з PostgreSQL
+			try {
+				await pool.query('DELETE FROM documents WHERE id = $1', [
+					newDocId,
+				]);
+				console.log('[Rollback] Deleted DB record');
+			} catch (dbErr) {
+				console.error('[Rollback] DB delete failed:', dbErr.message);
+			}
 		}
 
-		res.status(500).send('Upload failed: ' + err.message);
+		// Крок В: Видаляємо фізичний файл
+		if (file && file.path && fs.existsSync(file.path)) {
+			try {
+				fs.unlinkSync(file.path);
+				console.log('[Rollback] Deleted physical file');
+			} catch (fsErr) {
+				console.error('[Rollback] File delete failed:', fsErr.message);
+			}
+		}
+
+		// Повертаємо помилку клієнту
+		res.status(500).send(`Upload failed: ${err.message}`);
 	}
 };
 

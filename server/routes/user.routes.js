@@ -16,5 +16,6 @@ router.put(
 );
 
 router.delete('/profile', userController.deleteAccount);
+router.get('/avatar/:filename', userController.serveAvatar);
 
 module.exports = router;

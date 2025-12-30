@@ -2,6 +2,7 @@ const pool = require('../config/db');
 const { processDocument } = require('../services/ragService');
 const { chromaClient } = require('../config/ai');
 const fs = require('fs');
+const path = require('path');
 
 const uploadDocument = async (req, res) => {
 	let newDocId = null;
@@ -159,4 +160,52 @@ const deleteDocument = async (req, res) => {
 	}
 };
 
-module.exports = { uploadDocument, getDocuments, deleteDocument };
+const serveDocument = async (req, res) => {
+	try {
+		const { filename } = req.params;
+		const userId = req.user.id;
+
+		// 1. Шукаємо документ у таблиці documents
+		const docResult = await pool.query(
+			'SELECT * FROM documents WHERE filepath LIKE $1',
+			[`%${filename}`]
+		);
+
+		if (docResult.rows.length === 0) {
+			return res.status(404).json('Document not found');
+		}
+
+		const doc = docResult.rows[0];
+
+		// 2. Перевірка доступу
+		const memberCheck = await pool.query(
+			'SELECT * FROM workspace_members WHERE workspace_id = $1 AND user_id = $2',
+			[doc.workspace_id, userId]
+		);
+
+		if (memberCheck.rows.length === 0) {
+			return res
+				.status(403)
+				.json('Access Denied: You are not a member of this workspace');
+		}
+
+		// 3. Віддаємо файл
+		const absolutePath = path.join(__dirname, '../uploads', filename);
+
+		if (fs.existsSync(absolutePath)) {
+			res.sendFile(absolutePath);
+		} else {
+			res.status(404).json('File physically not found on server');
+		}
+	} catch (err) {
+		console.error(err);
+		res.status(500).send('Server Error');
+	}
+};
+
+module.exports = {
+	uploadDocument,
+	getDocuments,
+	deleteDocument,
+	serveDocument,
+};

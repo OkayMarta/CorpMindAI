@@ -35,7 +35,9 @@ router.post(
 	},
 	documentController.uploadDocument
 );
+
 router.get('/:workspaceId', documentController.getDocuments);
+router.get('/file/:filename', documentController.serveDocument);
 router.delete('/:id', documentController.deleteDocument);
 
 module.exports = router;

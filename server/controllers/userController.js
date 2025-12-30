@@ -88,4 +88,37 @@ const deleteAccount = async (req, res) => {
 	}
 };
 
-module.exports = { updateProfile, deleteAccount };
+const serveAvatar = async (req, res) => {
+	try {
+		const { filename } = req.params;
+
+		// 1. Перевіряємо, чи цей файл дійсно використовується як аватар кимось із юзерів
+		const avatarCheck = await pool.query(
+			'SELECT id FROM users WHERE avatar_url LIKE $1',
+			[`%${filename}`]
+		);
+
+		if (avatarCheck.rows.length === 0) {
+			return res.status(404).json('Avatar not found');
+		}
+
+		// 2. Віддаємо файл (AuthMiddleware вже пройшов перевірку токена)
+		const absolutePath = path.join(__dirname, '../uploads', filename);
+
+		if (fs.existsSync(absolutePath)) {
+			res.sendFile(absolutePath);
+		} else {
+			// Якщо у юзера посилання є, а файлу немає - повертаємо дефолтну заглушку або 404
+			res.status(404).json('Image not found');
+		}
+	} catch (err) {
+		console.error(err);
+		res.status(500).send('Server Error');
+	}
+};
+
+module.exports = {
+	updateProfile,
+	deleteAccount,
+	serveAvatar,
+};

@@ -1,10 +1,22 @@
 const Avatar = ({ url, name, size = 'w-10 h-10', textSize = 'text-sm' }) => {
+	// 1. Отримуємо токен
+	const token = localStorage.getItem('token');
+
 	if (url) {
+		// 2. Витягуємо ім'я файлу зі шляху
+		const filename = url.split(/[/\\]/).pop();
+
+		// 3. Формуємо новий URL
+		const secureUrl = `/api/users/avatar/${filename}?token=${token}`;
+
 		return (
 			<img
-				src={url}
+				src={secureUrl}
 				alt={name || 'User'}
 				className={`${size} rounded-full object-cover border border-gray-700`}
+				onError={(e) => {
+					e.target.style.display = 'none';
+				}}
 			/>
 		);
 	}

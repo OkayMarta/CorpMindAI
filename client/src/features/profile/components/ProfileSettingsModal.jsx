@@ -162,7 +162,19 @@ const ProfileSettingsModal = ({ isOpen, onClose }) => {
 										>
 											{preview ? (
 												<img
-													src={preview}
+													src={
+														preview.startsWith(
+															'blob:'
+														)
+															? preview
+															: `/api/users/avatar/${preview
+																	.split(
+																		/[/\\]/
+																	)
+																	.pop()}?token=${localStorage.getItem(
+																	'token'
+															  )}`
+													}
 													alt="Avatar"
 													className="w-24 h-24 rounded-full object-cover border-4 border-dark2 shadow-lg group-hover:opacity-75 transition-opacity"
 												/>

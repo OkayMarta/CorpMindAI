@@ -19,8 +19,6 @@ app.use('/api/chat', require('./routes/chat.routes'));
 app.use('/api/invitations', require('./routes/invitation.routes'));
 app.use('/api/users', require('./routes/user.routes'));
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
 app.listen(PORT, () => {
 	console.log(`Server running on port ${PORT}`);
 });

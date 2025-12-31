@@ -93,7 +93,7 @@ Securely upload and index corporate documents for the knowledge base.
 1.  **Clone the repository:**
 
     ```bash
-    git clone https://github.com/yourusername/CorpMindAI.git
+    git clone https://github.com/OkayMarta/CorpMindAI
     cd CorpMindAI
     ```
 
